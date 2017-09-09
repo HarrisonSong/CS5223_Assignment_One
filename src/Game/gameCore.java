@@ -1,4 +1,4 @@
 package Game;
 
-public class game {
+public class gameCore {
 }
