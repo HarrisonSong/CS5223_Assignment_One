@@ -1,17 +1,15 @@
 package Game;
 
-public class pair {
+public class Pair {
     public int row = 0;
     public int col = 0;
 
-    pair()
-    {
+    Pair(){
         row = 0;
         col = 0;
     }
 
-    pair(int r int c)
-    {
+    Pair(int r, int c){
         row = r;
         col = c;
     }

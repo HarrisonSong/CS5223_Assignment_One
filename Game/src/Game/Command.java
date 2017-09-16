@@ -1,6 +1,6 @@
 package Game;
 
-public enum command {
+public enum Command {
     West,
     South,
     East,

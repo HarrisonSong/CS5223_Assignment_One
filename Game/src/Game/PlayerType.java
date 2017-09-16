@@ -1,6 +1,6 @@
 package Game;
 
-public enum playerType {
+public enum PlayerType {
     Standard,
     Primary,
     Backup
