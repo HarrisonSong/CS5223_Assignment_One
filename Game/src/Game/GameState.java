@@ -6,7 +6,7 @@ import java.util.*;
 
 public class GameState {
     private List<Player> playerList = new ArrayList<Player>();
-    private Pair[] treasureLocation = new Pair[Core.TreasureSize];
+    private Pair[] treasureLocation = new Pair[Game.TreasureSize];
 
     public List<Player> getPlayerList() {
         return playerList;
