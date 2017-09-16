@@ -1,6 +1,6 @@
 package Game.Player;
-
 import Common.Pair;
+import java.util.Arrays;
 
 public class Player {
 
@@ -9,11 +9,9 @@ public class Player {
     private int score = 0;
     private PlayerType type = PlayerType.Standard;
 
-    public Player() {
+    public Player() {}
 
-    }
-
-    Player(char[] id, Pair curr, int scr, PlayerType pt) {
+    public Player(char[] id, Pair curr, int scr, PlayerType pt) {
         ID = id;
         currentPosition = curr;
         score = scr;
@@ -51,4 +49,8 @@ public class Player {
     public void setType(PlayerType type) {
         this.type = type;
     }
+
+    public boolean isNameAs(char[] name) {return Arrays.equals(ID, name);}
+
+    public boolean isAtCell(Pair location){ return this.equals(location);}
 }

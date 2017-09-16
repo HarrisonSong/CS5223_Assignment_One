@@ -1,5 +1,7 @@
 package Game;
-import Common.EndPoint;
+import Common.*;
+import Game.Player.Command;
+import Game.Player.Player;
 import Game.Player.PlayerType;
 
 import java.util.*;
@@ -13,7 +15,7 @@ public class Game implements GameInterface{
     private GameState gameState = new GameState();
 
     //local layer data
-    private String id;
+    private char[] id = new char[2];
     private PlayerType type = PlayerType.Standard;
     private EndPoint localIp;
 
@@ -62,11 +64,28 @@ public class Game implements GameInterface{
 
     }
 
-    //initallize game elements
-    private void setupGame(){}
+    //initallize game elements at first player join
+    private boolean setupGame(String inputId){
+
+        if(setLocalPlayerID(inputId))//set ID
+        {
+            type = PlayerType.Primary; //set type
+            primaryIp = localIp;//set primary IP
+            Player player = new Player(id, new Pair(Game.MazeSize-1),0, type);
+            gameState.initialize(player);//initialize game state with one player
+        }
+        else
+        {
+            return false;
+        }
+        return true;
+    }
 
     //update gameState after get latest gameState from primary server
-    private void updateGameState(){}
+    private void updateGameState(GameState gs){
+        this.gameState.setPlayerList(gs.getPlayerList());
+        this.gameState.setTreasureLocation(gs.getTreasureLocation());
+    }
 
     private void updateToBeNewPrimary(boolean isFirstPlayer){
         if(isFirstPlayer || type == PlayerType.Backup)
@@ -101,4 +120,12 @@ public class Game implements GameInterface{
 
     public void updateBackupGameState(GameState gs)
     {}
+
+    //Helper function
+    private boolean setLocalPlayerID(String inputID )
+    {
+        return true;
+    }
+
+
 }
