@@ -25,40 +25,40 @@ public class Game implements GameInterface{
 
         //get local IP and ports
         //try contact Tracker
-        //success, return with list of player Ip
-        //try contact with Play Ip(from last one) to get primary & backup
-        //fail, no one in the game, become primary server, setup game
-        //success, try to contact primary to join game
-        //fail, exit
-        //success, update local game state
-        //fail, exit
+            //success, return with list of player Ip
+                //try contact with Play Ip(from last one) to get primary & backup
+                    //fail, no one in the game, become primary server, setup game
+                    //success, try to contact primary to join game
+                        //fail, exit
+                        //success, update local game state
+            //fail, exit
 
         //Get input from IO, loop
-        // '9' observed, exit
-        // non '9' observed, try makeMove
-        //Case 1: Standard
-        //Try to call primary to makeMove
-        //timeout retry
-        //fail, send getPrimaryAndBackupIp to backup stored, update Ips, call (new)server to makeMove
-        //success, update local game state
-        //Case 2: Primary
-        //update locally, try to call backup to updateBackupGameState
-        //fail, select an Standard player to be new backup, update BackupIp, gameState
-        //success, do nothing
-        //Case 3: Backup
-        //Try to call primary to makeMove
-        //fail, updateToBeNewPrimary, makeMove locally, then select an Standard player to be new backup,
+            // '9' observed, exit
+            // non '9' observed, try makeMove
+                //Case 1: Standard
+                    //Try to call primary to makeMove
+                        //timeout retry
+                        //fail, send getPrimaryAndBackupIp to backup stored, update Ips, call (new)server to makeMove
+                        //success, update local game state
+                //Case 2: Primary
+                    //update locally, try to call backup to updateBackupGameState
+                        //fail, select an Standard player to be new backup, update BackupIp, gameState
+                        //success, do nothing
+                //Case 3: Backup
+                    //Try to call primary to makeMove
+                        //fail, updateToBeNewPrimary, makeMove locally, then select an Standard player to be new backup,
 
         //Ping (only do when no operation execute locally) (N-1)+ 1 + (N-1)*2 -> O(N)
         //Ping primary server every 0.5s, (primary no need ping itself)
-        //fail,wait for 1s, send getPrimaryAndBackupIp to backup stored, update Ips
-        //success do nothing
+            //fail,wait for 1s, send getPrimaryAndBackupIp to backup stored, update Ips
+            //success do nothing
         //Ping Backup every 0.5s, (backup no need ping itself)
-        //fail,wait for 1s, send getPrimaryAndBackupIp to primary stored, update Ips
-        //success do nothing
+            //fail,wait for 1s, send getPrimaryAndBackupIp to primary stored, update Ips
+            //success do nothing
         //(Primary Only) Ping standard player one by one
-        //fail, remove from list, update gameState
-        //success do nothing
+            //fail, remove from list, update gameState
+            //success do nothing
 
     }
 
