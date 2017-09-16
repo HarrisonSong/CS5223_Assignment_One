@@ -1,18 +1,18 @@
 package Tracker;
 
+//import Common.*;
+
 import java.rmi.Remote;
 import java.util.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
-
 import java.rmi.server.UnicastRemoteObject;
 
 
-public class Tracker implements Remote {
+public class Tracker implements TrackerInterface {
 
     private int N = 0;
     private int K = 0;
-    private int myPortNum = 0;
     private List<EndPoint> EndPointList;
 
     public Tracker(){
@@ -134,8 +134,9 @@ public class Tracker implements Remote {
         };
     }
 
-    public Tracker(int Port){
-        myPortNum = Port;
+    public Tracker(int t_k, int t_n){
+        K = t_k;
+        N = t_n;
         EndPointList = new List<EndPoint>() {
             @Override
             public int size() {
@@ -276,6 +277,14 @@ public class Tracker implements Remote {
         return EndPointList;
     }
 
+    public void setK(int t_k){
+        K = t_k;
+    }
+
+    public void setN(int t_n){
+        N = t_n;
+    }
+
     public static void main(String args[]) {
         Remote stub = null;
         Registry registry = null;
@@ -295,8 +304,9 @@ public class Tracker implements Remote {
         }
 
         try {
-            Tracker obj = new Tracker(p);
-            stub = (Remote) UnicastRemoteObject.exportObject(obj, p);
+            Tracker obj = new Tracker(N, K);
+
+            stub = (TrackerInterface) UnicastRemoteObject.exportObject(obj, p);
             registry = LocateRegistry.getRegistry();
             registry.bind("Tracker", stub);
 
@@ -315,3 +325,4 @@ public class Tracker implements Remote {
         return ;
     }
 }
+
