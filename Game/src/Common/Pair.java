@@ -1,15 +1,15 @@
-package Game;
+package Common;
 
 public class Pair {
     public int row = 0;
     public int col = 0;
 
-    Pair(){
+    public Pair(){
         row = 0;
         col = 0;
     }
 
-    Pair(int r, int c){
+    public Pair(int r, int c){
         row = r;
         col = c;
     }

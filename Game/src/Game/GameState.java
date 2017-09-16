@@ -1,4 +1,7 @@
 package Game;
+import Common.Pair;
+import Game.Player.Player;
+
 import java.util.*;
 
 public class GameState {
