@@ -2,7 +2,7 @@ package Tracker;
 
 public class EndPoint {
     private String IPAddr = "";
-    private int PortNum =0;
+    private int PortNum = 0;
 
     public EndPoint(){
         IPAddr = "";
@@ -15,7 +15,7 @@ public class EndPoint {
     }
 
     public EndPoint(String fullPath){
-        String[] parts = fullPath.split(";");
+        String[] parts = fullPath.split(":");
         IPAddr = parts[0];
         PortNum = Integer.parseInt(parts[1]);
     }
