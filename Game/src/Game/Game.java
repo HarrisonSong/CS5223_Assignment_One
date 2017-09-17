@@ -25,33 +25,56 @@ public class Game implements GameInterface{
     private EndPoint primaryIp;
     private EndPoint backupIp;
 
+    private EndPoint TrackerIp;
+
     public static void main(String args[]) {
+        // Args: [Tracker IP], [Tracker Port], [Player ID]
 
-        //get local IP and ports
-        //try contact Tracker
-            //success, return with list of player Ip
-                //try contact with Play Ip(from last one) to get primary & backup
-                    //fail, no one in the game, become primary server, setup game
-                    //success, try to contact primary to join game
-                        //fail, exit
-                        //success, update local game state
-            //fail, exit
+        /* Init Server */
+        // Set up Tracker Connection
 
-        //Get input from IO, loop
+        // Get local IP and ports
+
+        // Try to contact Tracker
+            // Success, return with list of player Ip
+                // If the list is empty, become primary server, setup game (No one in the list) -- END
+                // Else,
+                    // For LOOP: try contact with Play Ip(starting at the last one)
+                        // All IPs in the list fail to contact, then become primary server, setup game (No alive one in the list) -- END
+                        // Any one success, get Primary & backup, break the for loop
+                    // While LOOP: while (Primary IP is not null):
+                        // If contact primary server to join game
+                            // Fail[primary crash],
+                                // If backup IP is null, become primary server, setup game (No alive one in the list) -- END
+                                // Else, send getPrimaryAndBackupIp to backup server, update IPs, get new primary and backup
+                                    // Success,
+                                    // Fail, no server alive, setup itself as primary, and setup game -- END
+                            // Success, break the while loop: return game state and current Primary & Backup. If backup == itself, setup its self to backup -- END
+            // Fail, exit with error
+
+
+        /* Play Mode */
+        // Get input from IO, loop
             // '9' observed, exit
-            // non '9' observed, try makeMove
-                //Case 1: Standard
+            // non '9' observed,
+                // Case 1: Standard
                     //Try to call primary to makeMove
                         //timeout retry
-                        //fail, send getPrimaryAndBackupIp to backup stored, update Ips, call (new)server to makeMove
+                        //fail, send getPrimaryAndBackupIp to backup stored, update Ips, call (new)server to makeMove (while loop?)
                         //success, update local game state
-                //Case 2: Primary
-                    //update locally, try to call backup to updateBackupGameState
-                        //fail, select an Standard player to be new backup, update BackupIp, gameState
-                        //success, do nothing
-                //Case 3: Backup
+                // Case 2: Primary
+                    //Update locally, try to call backup to updateBackupGameState
+                        // Fail, select an Standard player to be new backup, update BackupIp, gameState (while loop?)
+                        // Success, do nothing
+                // Case 3: Backup
                     //Try to call primary to makeMove
-                        //fail, updateToBeNewPrimary, makeMove locally, then select an Standard player to be new backup,
+                        // fail, updateToBeNewPrimary, makeMove locally, then select an Standard player to be new backup and (while loop?)
+                        // update backup's game state
+                        // Success
+
+
+
+
 
         //Ping (only do when no operation execute locally) (N-1)+ 1 + (N-1)*2 -> O(N)
         //Ping primary server every 0.5s, (primary no need ping itself)
@@ -60,13 +83,15 @@ public class Game implements GameInterface{
         //Ping Backup every 0.5s, (backup no need ping itself)
             //fail,wait for 1s, send getPrimaryAndBackupIp to primary stored, update Ips
             //success do nothing
+
         //(Primary Only) Ping standard player one by one
             //fail, remove from list, update gameState
             //success do nothing
 
     }
 
-    //initallize game elements at first player join
+    // Primary Only
+    // Initialize game elements as Primary Server
     private boolean setupGame(String inputId){
         if(setLocalPlayerID(inputId))//set ID
         {
@@ -82,12 +107,14 @@ public class Game implements GameInterface{
         return true;
     }
 
-    //update gameState after get latest gameState from primary server
+    // Client function
+    // Update gameState after get latest gameState from primary server
     private void updateGameState(GameState gs){
         this.gameState.setPlayerList(gs.getPlayerList());
         this.gameState.setTreasureLocation(gs.getTreasureLocation());
     }
 
+    // Server function
     private void updateToBeNewPrimary(boolean isFirstPlayer){
         if(isFirstPlayer || type == PlayerType.Backup)
         {
@@ -96,6 +123,7 @@ public class Game implements GameInterface{
         }
     }
 
+    //Server function
     private void updateToBeNewBackup(){
         if(type == PlayerType.Standard)
         {
@@ -104,6 +132,7 @@ public class Game implements GameInterface{
         }
     }
 
+    // Primary only
     public GameState makeMove(Command cmd, char[] id) {
         if(type == PlayerType.Primary){
             if(!gameState.makeMove(cmd,id)) return null;
@@ -111,16 +140,25 @@ public class Game implements GameInterface{
         return gameState;
     }
 
+    // Primary Only
+    // Return game state and current primary IP and backup IP
     public GameState join(EndPoint Ip, char[] id){
-        if(gameState.getPlayerList().size() == 0){
-            if(!gameState.addNewPlayerById(id, PlayerType.Primary)){return null;}
-        }
-        if(gameState.getPlayerList().size() == 1){
+        if (backupIp == null){
+            backupIp = Ip;
             if(!gameState.addNewPlayerById(id, PlayerType.Backup)){return null;}
         }
         else {
             if(!gameState.addNewPlayerById(id, PlayerType.Standard)){return null;}
         }
+//        if(gameState.getPlayerList().size() == 0){
+//            if(!gameState.addNewPlayerById(id, PlayerType.Primary)){return null;}
+//        }
+//        if(gameState.getPlayerList().size() == 1){
+//            if(!gameState.addNewPlayerById(id, PlayerType.Backup)){return null;}
+//        }
+//        else {
+//            if(!gameState.addNewPlayerById(id, PlayerType.Standard)){return null;}
+//        }
         return gameState;
     }
 

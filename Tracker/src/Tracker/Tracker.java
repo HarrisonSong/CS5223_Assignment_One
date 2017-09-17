@@ -7,13 +7,15 @@ import java.util.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-
+import java.util.concurrent.Semaphore;
 
 public class Tracker implements TrackerInterface {
 
     private int N = 0;
     private int K = 0;
     private List<EndPoint> EndPointList;
+    private Semaphore semaphore = new Semaphore(1);
+
 
     public Tracker(){
         EndPointList = new List<EndPoint>() {
@@ -255,14 +257,41 @@ public class Tracker implements TrackerInterface {
         };
     }
 
-    public void registerNewPlayer(String IP, int Port){
-        EndPoint newOne = new EndPoint(IP, Port);
-        EndPointList.add(newOne);
+    public List<EndPoint> registerNewPlayer(String IP, int Port){
+
+        try {
+            semaphore.acquire();
+            try {
+                EndPoint newOne = new EndPoint(IP, Port);
+                EndPointList.add(newOne);
+            } finally {
+                semaphore.release();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return EndPointList;
     }
 
-    public void resetTrackerList(List<EndPoint> updatedList){
-        EndPointList.clear();
-        EndPointList = updatedList;
+    public boolean resetTrackerList(List<EndPoint> updatedList){
+        boolean result = true;
+
+        try {
+            semaphore.acquire();
+
+            try {
+                EndPointList.clear();
+                EndPointList = updatedList;
+            } finally {
+                semaphore.release();
+            }
+        } catch (InterruptedException e){
+            result = false;
+            e.printStackTrace();
+        }
+
+        return result;
     }
 
     public int getK() {
@@ -274,7 +303,18 @@ public class Tracker implements TrackerInterface {
     }
 
     public List<EndPoint> getEndPointList() {
-        return EndPointList;
+        List<EndPoint> temp = null;
+        try {
+            semaphore.acquire();
+            try {
+                temp = EndPointList;
+            } finally {
+                semaphore.release();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return temp;
     }
 
     public void setK(int t_k){
