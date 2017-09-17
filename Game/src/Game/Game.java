@@ -3,11 +3,13 @@ import Common.*;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
+import com.sun.xml.internal.bind.v2.model.core.ID;
 
 import java.util.*;
 
 public class Game implements GameInterface{
     //const variable
+    public static int IdLength = 2;
     public static int MazeSize = 15;
     public static int TreasureSize = 10;
 
@@ -66,7 +68,6 @@ public class Game implements GameInterface{
 
     //initallize game elements at first player join
     private boolean setupGame(String inputId){
-
         if(setLocalPlayerID(inputId))//set ID
         {
             type = PlayerType.Primary; //set type
@@ -103,12 +104,37 @@ public class Game implements GameInterface{
         }
     }
 
+    public GameState makeMove(Command cmd, char[] id) {
+        if(type == PlayerType.Primary){
+            if(!gameState.makeMove(cmd,id)) return null;
+        }
+        return gameState;
+    }
 
-    public GameState makeMove() {return gameState;}
+    public GameState join(EndPoint Ip, char[] id){
+        if(gameState.getPlayerList().size() == 0){
+            if(!gameState.addNewPlayerById(id, PlayerType.Primary)){return null;}
+        }
+        if(gameState.getPlayerList().size() == 1){
+            if(!gameState.addNewPlayerById(id, PlayerType.Backup)){return null;}
+        }
+        else {
+            if(!gameState.addNewPlayerById(id, PlayerType.Standard)){return null;}
+        }
+        return gameState;
+    }
 
-    public GameState join() {return gameState;}
+    //Standard ans Backup user true, else false
+    public boolean becomeBackup(GameState gs) {
+        if(type == PlayerType.Standard || type == PlayerType.Backup){
+            type = PlayerType.Backup;
+            backupIp = localIp;
+            updateGameState(gs);
+            return true;
+        }
+        else{return false;}
 
-    public void becomeBackup(GameState gs) {}
+    }
 
     public List<EndPoint> getPrimaryAndBackupIp(){
         List<EndPoint> result = new ArrayList<EndPoint>();
@@ -118,13 +144,51 @@ public class Game implements GameInterface{
         return result;
     }
 
-    public void updateBackupGameState(GameState gs)
-    {}
+    //Backup user return true, others return false
+    public boolean updateBackupGameState(GameState gs){
+        if(type != PlayerType.Backup){return false;}
+        else{
+            updateGameState(gs);
+            return true;
+        }
+    }
 
     //Helper function
-    private boolean setLocalPlayerID(String inputID )
-    {
+    //convert input String Id to char[] , and store to ip
+    private boolean setLocalPlayerID(String inputID ) {
+        if(inputID.length() != IdLength){return false;}
+        for(int i=0; i<IdLength; i++)
+        {
+            id[i] = inputID.charAt(i);
+        }
         return true;
+    }
+
+    private Command charToCommandConvert(char inputChar){
+
+        Command result = Command.Invlid;
+        switch (inputChar){
+            case '0':
+                result = Command.Refresh;
+                break;
+            case '1':
+                result = Command.West;
+                break;
+            case '2':
+                result = Command.South;
+                break;
+            case '3':
+                result = Command.East;
+                break;
+            case '4':
+                result = Command.North;
+                break;
+            case '9':
+                result = Command.Exit;
+                break;
+            default: break;
+        }
+        return result;
     }
 
 

@@ -1,10 +1,12 @@
 package Game.Player;
 import Common.Pair;
+import Game.Game;
+
 import java.util.Arrays;
 
 public class Player {
 
-    private char[] ID = new char[2];
+    private char[] ID = new char[Game.IdLength];
     private Pair currentPosition = new Pair();
     private int score = 0;
     private PlayerType type = PlayerType.Standard;

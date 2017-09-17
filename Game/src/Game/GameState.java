@@ -54,8 +54,7 @@ public class GameState {
                     break;
                 }
             }
-            if(!found)
-            {
+            if(!found){
                 newPlayer = new Player(id, loc, 0, type);
                 this.playerList.add(newPlayer);
                 return true;
@@ -65,6 +64,7 @@ public class GameState {
 
     }
 
+    //return true user found, return false user not found
     public boolean makeMove(Command cmd, char[] id) {
 
         int indexOfPlayer = getIndexOfPlayerById(id);
