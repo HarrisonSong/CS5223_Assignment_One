@@ -1,38 +1,50 @@
 package Common;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 public class EndPoint {
-    private String IPAddr = "";
-    private int PortNum =0;
+    private String IPAddress = "";
+    private int port = 0;
 
     public EndPoint(){
-        IPAddr = "";
-        PortNum = 0;
+        IPAddress = "";
+        port = 0;
     };
 
-    public EndPoint(String IPAdd, int Port){
-        IPAddr = IPAdd;
-        PortNum = Port;
+    public EndPoint(String IPAddress, int port){
+        this.IPAddress = IPAddress;
+        this.port = port;
     }
 
     public EndPoint(String fullPath){
-        String[] parts = fullPath.split(";");
-        IPAddr = parts[0];
-        PortNum = Integer.parseInt(parts[1]);
+        String[] parts = fullPath.split(":");
+        IPAddress = parts[0];
+        port = Integer.parseInt(parts[1]);
     }
 
-    public int getPortNum(){
-        return PortNum;
+    public static String getLocalIP(){
+        try {
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException ex) {
+            ex.printStackTrace();
+            return "";
+        }
     }
 
-    public String getIPAddr() {
-        return IPAddr;
+    public int getPort(){
+        return port;
     }
 
-    public void setIPAddr(String IPAddr) {
-        this.IPAddr = IPAddr;
+    public String getIPAddress() {
+        return IPAddress;
     }
 
-    public void setPortNum(int portNum) {
-        PortNum = portNum;
+    public void setIPAddress(String IPAddress) {
+        this.IPAddress = IPAddress;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 }

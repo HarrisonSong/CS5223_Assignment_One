@@ -1,31 +1,22 @@
 package Game.Player;
 import Common.Pair;
-import Game.Game;
-
-import java.util.Arrays;
 
 public class Player {
 
-    private char[] ID = new char[Game.IdLength];
+    private String name;
     private Pair currentPosition = new Pair();
     private int score = 0;
     private PlayerType type = PlayerType.Standard;
 
-    public Player() {}
-
-    public Player(char[] id, Pair curr, int scr, PlayerType pt) {
-        ID = id;
-        currentPosition = curr;
-        score = scr;
-        type = pt;
+    public Player(String name, Pair currentPosition, int score, PlayerType type) {
+        this.name = name;
+        this.currentPosition = currentPosition;
+        this.score = score;
+        this.type = type;
     }
 
-    public char[] getID() {
-        return ID;
-    }
-
-    public void setID(char[] ID) {
-        this.ID = ID;
+    public String getName() {
+        return name;
     }
 
     public Pair getCurrentPosition() {
@@ -52,7 +43,7 @@ public class Player {
         this.type = type;
     }
 
-    public boolean isNameAs(char[] name) {return Arrays.equals(ID, name);}
+    public boolean isNameAs(String name) {return this.name.equals(name);}
 
     public boolean isAtCell(Pair location){ return this.equals(location);}
 }

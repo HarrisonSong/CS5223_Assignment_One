@@ -11,7 +11,7 @@ public class Pinger {
     private InetSocketAddress destination;
 
     public Pinger(EndPoint endPoint) {
-        this.destination = new InetSocketAddress(endPoint.getIPAddr(), endPoint.getPortNum());
+        this.destination = new InetSocketAddress(endPoint.getIPAddress(), endPoint.getPort());
     }
 
     public Pinger(String IP, int port) {

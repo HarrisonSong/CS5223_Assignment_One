@@ -1,7 +1,7 @@
 package Game.Player;
 
 public enum Command {
-    Invlid(-1),
+    Invalid(-1),
     Refresh(0),
     West(1),
     South(2),
