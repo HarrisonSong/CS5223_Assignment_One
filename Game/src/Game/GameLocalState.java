@@ -3,6 +3,9 @@ package Game;
 import Common.EndPoint;
 import Game.Player.PlayerType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class GameLocalState {
 
     private String playName;
@@ -13,6 +16,8 @@ public class GameLocalState {
     private EndPoint backupEndPoint;
     private EndPoint trackerEndPoint;
 
+    private Map<String, EndPoint> playerEndPointsMap;
+
     public GameLocalState() {
         playName = new String(new char[Game.NAME_LENGTH]);
         playerType = PlayerType.Standard;
@@ -20,17 +25,8 @@ public class GameLocalState {
         primaryEndPoint = new EndPoint();
         backupEndPoint = new EndPoint();
         trackerEndPoint = new EndPoint();
+        this.playerEndPointsMap = new HashMap<>();
     }
-
-    public GameLocalState(String playName, PlayerType playerType, EndPoint localEndPoint, EndPoint primaryEndPoint, EndPoint backupEndPoint, EndPoint trackerEndPoint) {
-        this.playName = playName;
-        this.playerType = playerType;
-        this.localEndPoint = localEndPoint;
-        this.primaryEndPoint = primaryEndPoint;
-        this.backupEndPoint = backupEndPoint;
-        this.trackerEndPoint = trackerEndPoint;
-    }
-
 
     public String getPlayName() {
         return playName;
@@ -74,5 +70,21 @@ public class GameLocalState {
 
     public EndPoint getTrackerEndPoint() {
         return trackerEndPoint;
+    }
+
+    public Map<String, EndPoint> getPlayerEndPointsMap() {
+        return playerEndPointsMap;
+    }
+
+    public void setPlayerEndPointsMap(Map<String, EndPoint> playerEndPointsMap) {
+        this.playerEndPointsMap = playerEndPointsMap;
+    }
+
+    public void addPlayerEndPoint(String playName, EndPoint endPoint){
+        this.playerEndPointsMap.put(playName, endPoint);
+    }
+
+    public void removePlayerEndPoint(String playName){
+        this.playerEndPointsMap.remove(playName);
     }
 }

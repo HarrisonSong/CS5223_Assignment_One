@@ -55,7 +55,7 @@ public class GameGlobalState {
         return false;
     }
 
-    public boolean removePlayer(String name){
+    public boolean removePlayerByName(String name){
         if(!isPlayerNameUsed(name)) return false;
         this.playerList.remove(getIndexOfPlayerByName(name));
         return true;

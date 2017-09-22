@@ -1,11 +1,9 @@
 package Tracker;
 
-import java.rmi.Remote;
 import java.util.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.concurrent.Semaphore;
 
 public class Tracker implements TrackerInterface {
 
@@ -14,13 +12,6 @@ public class Tracker implements TrackerInterface {
     private int N;
     private int K;
     private EndPointsMap endPointsMap;
-    private Semaphore semaphore = new Semaphore(1);
-
-    public Tracker(){
-        this.N = 0;
-        this.K = 0;
-        this.endPointsMap = new EndPointsMap();
-    }
 
     public Tracker(int treasureNumber, int mazeDimension){
         this.K = treasureNumber;
@@ -29,8 +20,6 @@ public class Tracker implements TrackerInterface {
     }
 
     public static void main(String args[]) {
-        Remote stub = null;
-        Registry registry = null;
         int port = 0;
         int N = 0;
         int K = 0;
@@ -53,19 +42,20 @@ public class Tracker implements TrackerInterface {
         }
         try {
             Tracker tracker = new Tracker(N, K);
-            stub = (TrackerInterface) UnicastRemoteObject.exportObject(tracker, port);
-            registry = LocateRegistry.getRegistry();
+            TrackerInterface stub = (TrackerInterface) UnicastRemoteObject.exportObject(tracker, port);
+            Registry registry = LocateRegistry.getRegistry();
+
+            /**
+             * Release the potential existing process
+             * and rebind.
+             */
+            registry.unbind("Tracker");
             registry.bind("Tracker", stub);
+
             System.out.println("Tracker ready");
         } catch (Exception e) {
-            try {
-                registry.unbind("Tracker");
-                registry.bind("Tracker", stub);
-                System.out.println("Tracker ready");
-            }catch(Exception ee){
-                System.err.println("Tracker exception: " + ee.toString());
-                ee.printStackTrace();
-            }
+            System.err.println("Tracker exception: " + e.toString());
+            e.printStackTrace();
         }
     }
 

@@ -6,6 +6,11 @@ import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
 
+import java.rmi.AlreadyBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 
 public class Game implements GameInterface {
@@ -14,6 +19,8 @@ public class Game implements GameInterface {
      * static game global constants
      */
     public static final int NAME_LENGTH = 2;
+    public static final int DEFAULT_PLAYER_ACCESS_PORT = 80;
+
     public static int MazeSize;
     public static int TreasureSize;
 
@@ -27,12 +34,9 @@ public class Game implements GameInterface {
      */
     private GameLocalState gameLocalState;
 
-    private HashMap<String, EndPoint> playerEndPointsMap;
-
     public Game() {
         this.gameGlobalState = new GameGlobalState();
         this.gameLocalState = new GameLocalState();
-        this.playerEndPointsMap = new HashMap<>();
     }
 
     /**
@@ -96,7 +100,86 @@ public class Game implements GameInterface {
         //fail, remove from list, update gameGlobalState
         //success do nothing
 
+        String trackerIP = "";
+        int trackerPort = 0;
+        String playName = "";
 
+        if(args.length < 3){
+            System.err.println("Not enough parameters.");
+            System.exit(0);
+            return;
+        }
+
+        if (args.length == 3) {
+            trackerIP = args[0];
+            playName = args[2];
+            try {
+                trackerPort = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {
+                System.err.println("Failed to get tracker port.");
+                System.exit(0);
+                return;
+            }
+        }
+        try {
+            Registry trackerRegistry = LocateRegistry.getRegistry(trackerIP, trackerPort);
+            TrackerInterface trackerStub = (TrackerInterface) trackerRegistry.lookup("Tracker");
+
+            String localIP = EndPoint.getLocalIP();
+            if(trackerStub.registerNewPlayer(localIP, DEFAULT_PLAYER_ACCESS_PORT, playName)){
+
+                /**
+                 * Initialize and collect necessary parameters from tracker
+                 */
+                Game game = new Game();
+                MazeSize = trackerStub.getN();
+                TreasureSize = trackerStub.getK();
+                Map playerEndPoints = trackerStub.retrieveEndPointsMap();
+                game.gameLocalState.setPlayerEndPointsMap(playerEndPoints);
+
+                /**
+                 * Setup player remote access
+                 */
+                game.setupRegistry(playName, game);
+
+                switch (playerEndPoints.size()){
+                    case 1: {
+                        game.setupGameAsPrimaryServer(playName, localIP);
+                        // TODO: SETUP PERIODIC PING TO EACH PLAYER
+                        break;
+                    }
+                    case 2: {
+                        game.setupGame(playName, localIP, PlayerType.Backup);
+                        // TODO: ASK PRIMARY TO JOIN
+                        // TODO: SETUP PERIODIC PING TO PRIMARY
+                        break;
+                    }
+                    default: {
+                        game.setupGame(playName, localIP, PlayerType.Standard);
+                        // TODO: ASK PRIMARY TO JOIN
+                        break;
+                    }
+                }
+
+                /**
+                 * Continuously read user input from
+                 * standard input.
+                 */
+                Scanner inputScanner = new Scanner(System.in);
+                while(inputScanner.hasNext()){
+                    game.issueRequest(inputScanner.nextLine());
+                }
+            }else{
+                System.err.println("Failed to register.");
+                System.exit(0);
+                return;
+            }
+
+
+        } catch (Exception e) {
+            System.err.println("Player exception: " + e.toString());
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -107,16 +190,13 @@ public class Game implements GameInterface {
 
     /**
      * game setup when first player joins
-     * @param name
+     * @param playName
      */
-    private void setupGameAsPrimaryServer(String name){
-        this.gameLocalState.setPlayName(name);
+    private void setupGameAsPrimaryServer(String playName, String localIPAddress){
+        this.gameLocalState.setPlayName(playName);
         this.gameLocalState.setPlayerType(PlayerType.Primary);
-
-        String localIPAddress = EndPoint.getLocalIP();
-        this.gameLocalState.setLocalEndPoint(new EndPoint(localIPAddress, 80));
-
-        Player primaryPlayer = new Player(name, new Pair(Game.MazeSize), 0, PlayerType.Primary);
+        this.gameLocalState.setLocalEndPoint(new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT));
+        Player primaryPlayer = new Player(playName, new Pair(Game.MazeSize), 0, PlayerType.Primary);
         this.gameGlobalState.initialize(primaryPlayer);
     }
 
@@ -130,7 +210,7 @@ public class Game implements GameInterface {
     private void setBackupServer(int playerIndex){
         if(this.gameLocalState.getPlayerType() == PlayerType.Standard && playerIndex != -1) {
             this.gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
-            this.gameLocalState.setBackupEndPoint(this.playerEndPointsMap.get(this.gameGlobalState.getPlayerList().get(playerIndex).getName()));
+            this.gameLocalState.setBackupEndPoint(this.gameLocalState.getPlayerEndPointsMap().get(this.gameGlobalState.getPlayerList().get(playerIndex).getName()));
         }
     }
 
@@ -140,11 +220,11 @@ public class Game implements GameInterface {
      * @param request
      * @return updated global game state
      */
-    public GameGlobalState executeRequest(String playerName, char request){
+    public GameGlobalState executeRequest(String playerName, String request){
         Command classifiedRequest = classifyPlayerInput(request);
         if(classifiedRequest.equals(Command.Exit)){
-            this.playerEndPointsMap.remove(playerName);
-            this.gameGlobalState.removePlayer(playerName);
+            this.gameLocalState.removePlayerEndPoint(playerName);
+            this.gameGlobalState.removePlayerByName(playerName);
             return this.gameGlobalState;
         }
         if(!classifiedRequest.equals(Command.Invalid)){
@@ -164,13 +244,13 @@ public class Game implements GameInterface {
      * @return updated global game state
      */
     public GameGlobalState join(EndPoint IPAddress, String playName){
-        if(this.playerEndPointsMap.size() == 1){
+        if(this.gameLocalState.getPlayerEndPointsMap().size() == 1){
             this.gameLocalState.setBackupEndPoint(IPAddress);
             this.gameGlobalState.addNewPlayerByName(playName, PlayerType.Backup);
-            this.playerEndPointsMap.put(playName, IPAddress);
+            this.gameLocalState.addPlayerEndPoint(playName, IPAddress);
         }else{
             this.gameGlobalState.addNewPlayerByName(playName, PlayerType.Standard);
-            this.playerEndPointsMap.put(playName, IPAddress);
+            this.gameLocalState.addPlayerEndPoint(playName, IPAddress);
         }
         return this.gameGlobalState;
     }
@@ -190,6 +270,7 @@ public class Game implements GameInterface {
      * BACKUP SPECIFIC METHODS
      *
      */
+
     /**
      * promote current game to be primary server
      * @param isTheOnlyPlayer
@@ -208,11 +289,32 @@ public class Game implements GameInterface {
      *
      */
 
+    private void setupGame(String playName, String localIPAddress, PlayerType type){
+        this.gameLocalState.setPlayName(playName);
+        this.gameLocalState.setPlayerType(type);
+        this.gameLocalState.setLocalEndPoint(new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT));
+        this.gameGlobalState.addNewPlayerByName(playName, type);
+    }
+
+    /**
+     * Method to setup local RMI registry
+     * @param playName
+     * @param game
+     * @throws RemoteException
+     * @throws AlreadyBoundException
+     */
+    private void setupRegistry(String playName, Game game) throws RemoteException, AlreadyBoundException {
+        GameInterface stub = (GameInterface) UnicastRemoteObject.exportObject(game, DEFAULT_PLAYER_ACCESS_PORT);
+        Registry registry = LocateRegistry.createRegistry(DEFAULT_PLAYER_ACCESS_PORT);
+        registry.bind("Player_" + playName, stub);
+    }
+
     /**
      * Update game global state according to primary
      * server response
      * @param gameState
      */
+
     private void updateGameGlobalState(GameGlobalState gameState){
         this.gameGlobalState.setPlayerList(gameState.getPlayerList());
         this.gameGlobalState.setTreasureLocation(gameState.getTreasureLocation());
@@ -247,7 +349,7 @@ public class Game implements GameInterface {
     }
 
     /**
-     * get primary and backup server endPoints
+     * Get primary and backup server endPoints
      * @return
      */
     public List<EndPoint> getPrimaryAndBackupEndPoints(){
@@ -255,6 +357,17 @@ public class Game implements GameInterface {
         result.add(this.gameLocalState.getPrimaryEndPoint());
         result.add(this.gameLocalState.getBackupEndPoint());
         return result;
+    }
+
+    /**
+     * Method for player to issue the user operation
+     * @param request
+     */
+    public void issueRequest(String request){
+        executeRequest(this.gameLocalState.getPlayName(), request);
+        if(request.equals(Command.Exit.getValue())){
+            System.exit(0);
+        }
     }
 
     /**
@@ -266,25 +379,25 @@ public class Game implements GameInterface {
      * @param request
      * @return classified command
      */
-    private Command classifyPlayerInput(char request){
+    private Command classifyPlayerInput(String request){
         Command result = Command.Invalid;
         switch (request){
-            case '0':
+            case "0":
                 result = Command.Refresh;
                 break;
-            case '1':
+            case "1":
                 result = Command.West;
                 break;
-            case '2':
+            case "2":
                 result = Command.South;
                 break;
-            case '3':
+            case "3":
                 result = Command.East;
                 break;
-            case '4':
+            case "4":
                 result = Command.North;
                 break;
-            case '9':
+            case "9":
                 result = Command.Exit;
                 break;
             default: break;
