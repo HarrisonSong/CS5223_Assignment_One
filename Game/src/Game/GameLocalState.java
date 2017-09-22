@@ -76,6 +76,16 @@ public class GameLocalState {
         return playerEndPointsMap;
     }
 
+    public String getPlayerByEndPoint(EndPoint targetEndpoint) {
+        for(Map.Entry<String, EndPoint> endpoint : this.playerEndPointsMap.entrySet()){
+            if(endpoint.equals(targetEndpoint)){
+                return endpoint.getKey();
+            }
+        }
+        return "";
+    }
+
+
     public void setPlayerEndPointsMap(Map<String, EndPoint> playerEndPointsMap) {
         this.playerEndPointsMap = playerEndPointsMap;
     }

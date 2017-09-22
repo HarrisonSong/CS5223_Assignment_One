@@ -47,4 +47,9 @@ public class EndPoint {
     public void setPort(int port) {
         this.port = port;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return ((EndPoint)obj).getIPAddress() == this.IPAddress && ((EndPoint)obj).getPort() == this.port;
+    }
 }

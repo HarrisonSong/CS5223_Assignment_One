@@ -6,15 +6,15 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-public class Pinger {
+public class PingMaster {
     private static final int TIMEOUT = 500;
     private InetSocketAddress destination;
 
-    public Pinger(EndPoint endPoint) {
+    public PingMaster(EndPoint endPoint) {
         this.destination = new InetSocketAddress(endPoint.getIPAddress(), endPoint.getPort());
     }
 
-    public Pinger(String IP, int port) {
+    public PingMaster(String IP, int port) {
         this.destination = new InetSocketAddress(IP, port);
     }
 

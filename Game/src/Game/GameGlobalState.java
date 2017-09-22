@@ -1,6 +1,6 @@
 package Game;
 
-import Common.Pair;
+import Common.Pair.mazePair;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
@@ -11,12 +11,12 @@ public class GameGlobalState {
     public static final int LocationExplorerAttemptTime = 10;
 
     private List<Player> playerList = new ArrayList<Player>();
-    private List<Pair> treasureLocation = new ArrayList<Pair>(Game.TreasureSize);
+    private List<mazePair> treasureLocation = new ArrayList<mazePair>(Game.TreasureSize);
     private int latestActivePlayerIndex = -1;
 
     public void initialize(Player firstPlayer) {
         for(int i=0; i < Game.TreasureSize; i++) {
-            treasureLocation.add(new Pair(Game.MazeSize));
+            treasureLocation.add(new mazePair(Game.MazeSize));
         }
         playerList.add(firstPlayer);
     }
@@ -40,7 +40,7 @@ public class GameGlobalState {
         if(isPlayerNameUsed(name)) return false;
         boolean found = false;
         for(int i = 0; i < LocationExplorerAttemptTime; i++) {
-            Pair newLocation = new Pair(Game.MazeSize);
+            mazePair newLocation = new mazePair(Game.MazeSize);
             for(Player p: playerList){
                 if(p.isAtCell(newLocation)) {
                     found = true;
@@ -73,7 +73,7 @@ public class GameGlobalState {
         int indexOfPlayer = getIndexOfPlayerByName(playerName);
         if(isPlayerNameUsed(playerName)) {
             Player targetPlayer = this.playerList.get(indexOfPlayer);
-            Pair currentLocation = targetPlayer.getCurrentPosition();
+            mazePair currentLocation = targetPlayer.getCurrentPosition();
             switch (cmd){
                 case West:
                     currentLocation.setColumn(currentLocation.getColumn() - 1);
@@ -112,11 +112,11 @@ public class GameGlobalState {
         this.playerList = playerList;
     }
 
-    public List<Pair> getTreasureLocation(){
+    public List<mazePair> getTreasureLocation(){
         return treasureLocation;
     }
 
-    public void setTreasureLocation(List<Pair> treasureLocation) {
+    public void setTreasureLocation(List<mazePair> treasureLocation) {
         this.treasureLocation = treasureLocation;
     }
 
@@ -128,11 +128,11 @@ public class GameGlobalState {
     //helper methods
     private void generateNewTreasures(List<Integer> list) {
         for(int i=0; i<list.size(); i++){
-            treasureLocation.set(list.get(i).intValue(), new Pair(Game.MazeSize));
+            treasureLocation.set(list.get(i).intValue(), new mazePair(Game.MazeSize));
         }
     }
 
-    private List<Integer> findTreasuresAtLocation(Pair location) {
+    private List<Integer> findTreasuresAtLocation(mazePair location) {
         List<Integer> indexList = new ArrayList<>();
         for(int i=0; i<Game.TreasureSize; i++) {
             if(treasureLocation.get(i).equals(location)) {
@@ -142,11 +142,11 @@ public class GameGlobalState {
         return indexList;
     }
 
-    private boolean isLocationAccessible(Pair location) {
+    private boolean isLocationAccessible(mazePair location) {
         return location.isValid() && !findPlayerAtLocation(location);
     }
 
-    private boolean findPlayerAtLocation(Pair location) {
+    private boolean findPlayerAtLocation(mazePair location) {
         for(Player player : this.playerList){
             if(player.isAtCell(location)){
                 return true;

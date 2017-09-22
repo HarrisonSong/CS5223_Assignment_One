@@ -1,14 +1,14 @@
 package Game.Player;
-import Common.Pair;
+import Common.Pair.mazePair;
 
 public class Player {
 
     private String name;
-    private Pair currentPosition = new Pair();
+    private mazePair currentPosition = new mazePair();
     private int score = 0;
     private PlayerType type = PlayerType.Standard;
 
-    public Player(String name, Pair currentPosition, int score, PlayerType type) {
+    public Player(String name, mazePair currentPosition, int score, PlayerType type) {
         this.name = name;
         this.currentPosition = currentPosition;
         this.score = score;
@@ -19,11 +19,11 @@ public class Player {
         return name;
     }
 
-    public Pair getCurrentPosition() {
+    public mazePair getCurrentPosition() {
         return currentPosition;
     }
 
-    public void setCurrentPosition(Pair currentPosition) {
+    public void setCurrentPosition(mazePair currentPosition) {
         this.currentPosition = currentPosition;
     }
 
@@ -45,5 +45,5 @@ public class Player {
 
     public boolean isNameAs(String name) {return this.name.equals(name);}
 
-    public boolean isAtCell(Pair location){ return this.equals(location);}
+    public boolean isAtCell(mazePair location){ return this.equals(location);}
 }
