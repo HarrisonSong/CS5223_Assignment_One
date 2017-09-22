@@ -9,8 +9,11 @@ import Game.BackgroundPing.SingleEndPointLiveChecker;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
+import com.sun.corba.se.spi.resolver.LocalResolver;
 
+import javax.sound.midi.Track;
 import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -18,6 +21,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class Game implements GameInterface {
@@ -30,6 +34,13 @@ public class Game implements GameInterface {
 
     public static int MazeSize;
     public static int TreasureSize;
+
+    private TrackerInterface tracker;
+    private GameInterface primaryServer;
+    private GameInterface backupServer;
+
+    private ScheduledExecutorService scheduler;
+    private ScheduledFuture backgroundScheduledTask;
 
     /**
      * game data to be bind with GUI
@@ -130,18 +141,19 @@ public class Game implements GameInterface {
         }
         try {
             Registry trackerRegistry = LocateRegistry.getRegistry(trackerIP, trackerPort);
-            TrackerInterface trackerStub = (TrackerInterface) trackerRegistry.lookup("Tracker");
+            TrackerInterface tracker = (TrackerInterface) trackerRegistry.lookup("Tracker");
 
             String localIP = EndPoint.getLocalIP();
-            if(trackerStub.registerNewPlayer(localIP, DEFAULT_PLAYER_ACCESS_PORT, playName)){
+            if(tracker.registerNewPlayer(localIP, DEFAULT_PLAYER_ACCESS_PORT, playName)){
 
                 /**
                  * Initialize and collect necessary parameters from tracker
                  */
                 Game game = new Game();
-                MazeSize = trackerStub.getN();
-                TreasureSize = trackerStub.getK();
-                Map playerEndPoints = trackerStub.retrieveEndPointsMap();
+                game.tracker = tracker;
+                MazeSize = tracker.getN();
+                TreasureSize = tracker.getK();
+                Map playerEndPoints = tracker.retrieveEndPointsMap();
                 game.gameLocalState.setPlayerEndPointsMap(playerEndPoints);
 
                 /**
@@ -155,19 +167,8 @@ public class Game implements GameInterface {
                         /**
                          * Setup periodic ping to each player
                          */
-                        Map<NameTypePair, EndPoint> enhancedEndPointsMap = new HashMap<>();
-                        for(Map.Entry<String, EndPoint> endpoint : game.gameLocalState.getPlayerEndPointsMap().entrySet()){
-                            if(!endpoint.getValue().equals(game.gameLocalState.getPrimaryEndPoint())){
-                                if(endpoint.getValue().equals(game.gameLocalState.getBackupEndPoint())){
-                                    enhancedEndPointsMap.put(new NameTypePair(endpoint.getKey(), PlayerType.Backup), endpoint.getValue());
-                                }else{
-                                    enhancedEndPointsMap.put(new NameTypePair(endpoint.getKey(), PlayerType.Standard), endpoint.getValue());
-                                }
-                            }
-                        }
-
-                        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                        scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(enhancedEndPointsMap, (name) -> game.handleStandardPlayerUnavailability(name), () -> game.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
+                        game.scheduler = Executors.newScheduledThreadPool(0);
+                        game.backgroundScheduledTask = game.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(game.retrieveEnhancedEndPointsMap(), (name) -> game.handleStandardPlayerUnavailability(name), () -> game.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
 
                         break;
                     }
@@ -175,18 +176,22 @@ public class Game implements GameInterface {
                         game.setupGame(playName, localIP, PlayerType.Backup);
 
                         /**
+                         * Setup RMI connection to primary server
+                         */
+                        Registry primaryRegistry = LocateRegistry.getRegistry(game.gameLocalState.getPrimaryEndPoint().getIPAddress(), game.gameLocalState.getPrimaryEndPoint().getPort());
+                        String primaryPlayerName = game.gameLocalState.getPlayerByEndPoint(game.gameLocalState.getPrimaryEndPoint());
+                        game.primaryServer = (GameInterface) primaryRegistry.lookup("Player_" + primaryPlayerName);
+
+                        /**
                          * Ask Primary to join
                          */
-                        Registry registry = LocateRegistry.getRegistry(game.gameLocalState.getPrimaryEndPoint().getIPAddress(), game.gameLocalState.getPrimaryEndPoint().getPort());
-                        String primaryPlayerName = game.gameLocalState.getPlayerByEndPoint(game.gameLocalState.getPrimaryEndPoint());
-                        GameInterface primaryServerStub = (GameInterface) registry.lookup("Player_" + primaryPlayerName);
-                        primaryServerStub.join(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
+                        game.primaryServer.join(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
 
                         /**
                          * Setup periodic ping to primary
                          */
-                        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                        scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(game.gameLocalState.getPrimaryEndPoint(), () -> game.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
+                        game.scheduler = Executors.newScheduledThreadPool(0);
+                        game.backgroundScheduledTask  = game.scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(game.gameLocalState.getPrimaryEndPoint(), () -> game.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
 
                         break;
                     }
@@ -194,12 +199,16 @@ public class Game implements GameInterface {
                         game.setupGame(playName, localIP, PlayerType.Standard);
 
                         /**
+                         * Setup RMI connection to primary server
+                         */
+                        Registry primaryRegistry = LocateRegistry.getRegistry(game.gameLocalState.getPrimaryEndPoint().getIPAddress(), game.gameLocalState.getPrimaryEndPoint().getPort());
+                        String primaryPlayerName = game.gameLocalState.getPlayerByEndPoint(game.gameLocalState.getPrimaryEndPoint());
+                        game.primaryServer = (GameInterface) primaryRegistry.lookup("Player_" + primaryPlayerName);
+
+                        /**
                          * Ask Primary to join
                          */
-                        Registry registry = LocateRegistry.getRegistry(game.gameLocalState.getPrimaryEndPoint().getIPAddress(), game.gameLocalState.getPrimaryEndPoint().getPort());
-                        String primaryPlayerName = game.gameLocalState.getPlayerByEndPoint(game.gameLocalState.getPrimaryEndPoint());
-                        GameInterface primaryServerStub = (GameInterface) registry.lookup("Player_" + primaryPlayerName);
-                        primaryServerStub.join(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
+                        game.primaryServer.join(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
 
                         break;
                     }
@@ -248,7 +257,24 @@ public class Game implements GameInterface {
      * Assign player to be backup server
      */
     private void assignBackupServer(){
-        setBackupServer(this.gameGlobalState.getLatestActivePlayerIndex());
+        int latestActivePlayerIndex = this.gameGlobalState.getLatestActivePlayerIndex();
+        String backupPlayerName = this.gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
+        EndPoint newEndPoint = this.gameLocalState.getPlayerEndPointsMap().get(backupPlayerName);
+
+        try {
+            Registry backupRegistry = LocateRegistry.getRegistry(newEndPoint.getIPAddress(), newEndPoint.getPort());
+            try {
+                backupServer = (GameInterface)backupRegistry.lookup("Player_" + backupPlayerName);
+                backupServer.promoteToBeBackup(this.gameGlobalState);
+                setBackupServer(this.gameGlobalState.getLatestActivePlayerIndex());
+            } catch (NotBoundException notBoundException) {
+                //TODO: Handle backup connection failure
+                notBoundException.printStackTrace();
+            }
+        } catch (RemoteException remoteException) {
+            //TODO: Handle backup connection failure
+            remoteException.printStackTrace();
+        }
     }
 
     private void setBackupServer(int playerIndex){
@@ -266,17 +292,20 @@ public class Game implements GameInterface {
      */
     public GameGlobalState executeRequest(String playerName, String request){
         Command classifiedRequest = classifyPlayerInput(request);
-        if(classifiedRequest.equals(Command.Exit)){
-            this.gameLocalState.removePlayerEndPoint(playerName);
-            this.gameGlobalState.removePlayerByName(playerName);
-            return this.gameGlobalState;
-        }
         if(!classifiedRequest.equals(Command.Invalid)){
+            if(classifiedRequest.equals(Command.Exit)){
+                this.gameLocalState.removePlayerEndPoint(playerName);
+                this.gameGlobalState.removePlayerByName(playerName);
+            }
             if(classifiedRequest.equals(Command.East) || classifiedRequest.equals(Command.West) ||
                     classifiedRequest.equals(Command.South) || classifiedRequest.equals(Command.North)){
                 this.gameGlobalState.makeMove(classifiedRequest, playerName);
             }
-            return this.gameGlobalState;
+            try {
+                backupServer.updateBackupGameState(this.gameGlobalState);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
         return this.gameGlobalState;
     }
@@ -292,6 +321,19 @@ public class Game implements GameInterface {
             this.gameLocalState.setBackupEndPoint(IPAddress);
             this.gameGlobalState.addNewPlayerByName(playName, PlayerType.Backup);
             this.gameLocalState.addPlayerEndPoint(playName, IPAddress);
+
+            /**
+             * setup RMI connection to backup server
+             */
+            try {
+                Registry backupRegistry = LocateRegistry.getRegistry(gameLocalState.getBackupEndPoint().getIPAddress(), gameLocalState.getBackupEndPoint().getPort());
+                String backupPlayerName = gameLocalState.getPlayerByEndPoint(gameLocalState.getBackupEndPoint());
+                backupServer = (GameInterface) backupRegistry.lookup("Player_" + backupPlayerName);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            } catch (NotBoundException e) {
+                e.printStackTrace();
+            }
         }else{
             this.gameGlobalState.addNewPlayerByName(playName, PlayerType.Standard);
             this.gameLocalState.addPlayerEndPoint(playName, IPAddress);
@@ -302,6 +344,7 @@ public class Game implements GameInterface {
     public void handleStandardPlayerUnavailability(String playerName){
         this.gameLocalState.removePlayerEndPoint(playerName);
         this.gameGlobalState.removePlayerByName(playerName);
+
     }
 
     public void handleBackupServerUnavailability(){
@@ -309,6 +352,13 @@ public class Game implements GameInterface {
         this.gameLocalState.removePlayerEndPoint(backupPlayerName);
         this.gameGlobalState.removePlayerByName(backupPlayerName);
         assignBackupServer();
+        try {
+            tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -322,6 +372,13 @@ public class Game implements GameInterface {
         this.gameLocalState.removePlayerEndPoint(primaryPlayerName);
         this.gameGlobalState.removePlayerByName(primaryPlayerName);
         promoteToBePrimary(this.gameLocalState.getPlayerEndPointsMap().size() == 1);
+        try {
+            tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -333,6 +390,12 @@ public class Game implements GameInterface {
             this.gameLocalState.setPlayerType(PlayerType.Primary);
             this.gameGlobalState.getPlayerList().get(this.gameGlobalState.getIndexOfPlayerByName(this.gameLocalState.getPlayName())).setType(PlayerType.Primary);
             this.gameLocalState.setPrimaryEndPoint(this.gameLocalState.getLocalEndPoint());
+
+            /**
+             * Reschedule the background ping task
+             */
+            this.backgroundScheduledTask.cancel(true);
+            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(this.retrieveEnhancedEndPointsMap(), (name) -> this.handleStandardPlayerUnavailability(name), () -> this.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -396,6 +459,8 @@ public class Game implements GameInterface {
             this.gameLocalState.setPlayerType(PlayerType.Backup);
             this.gameLocalState.setBackupEndPoint(this.gameLocalState.getLocalEndPoint());
             this.updateGameGlobalState(gameState);
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(this.gameLocalState.getPrimaryEndPoint(), () -> this.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
             return true;
         }
         return false;
@@ -417,7 +482,11 @@ public class Game implements GameInterface {
      * @param request
      */
     public void issueRequest(String request){
-        executeRequest(this.gameLocalState.getPlayName(), request);
+        try {
+            primaryServer.executeRequest(this.gameLocalState.getPlayName(), request);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         if(request.equals(Command.Exit.getValue())){
             System.exit(0);
         }
@@ -427,6 +496,25 @@ public class Game implements GameInterface {
     /**
      * helper methods
      */
+
+    /**
+     * Method to retrieve player name/type mapping with endpoint
+     * @return
+     */
+    public Map retrieveEnhancedEndPointsMap(){
+        Map<NameTypePair, EndPoint> enhancedEndPointsMap = new HashMap<>();
+        for(Map.Entry<String, EndPoint> endpoint : this.gameLocalState.getPlayerEndPointsMap().entrySet()){
+            if(!endpoint.getValue().equals(this.gameLocalState.getPrimaryEndPoint())){
+                if(endpoint.getValue().equals(this.gameLocalState.getBackupEndPoint())){
+                    enhancedEndPointsMap.put(new NameTypePair(endpoint.getKey(), PlayerType.Backup), endpoint.getValue());
+                }else{
+                    enhancedEndPointsMap.put(new NameTypePair(endpoint.getKey(), PlayerType.Standard), endpoint.getValue());
+                }
+            }
+        }
+        return enhancedEndPointsMap;
+    }
+
     /**
      * categorize player requests
      * @param request
@@ -456,15 +544,5 @@ public class Game implements GameInterface {
             default: break;
         }
         return result;
-    }
-
-    /**
-     * method to detect endpoint status
-     * @param IPAddress
-     * @return endpoint alive status
-     */
-    private boolean checkAlive(EndPoint IPAddress){
-        PingMaster pingMaster = new PingMaster(IPAddress);
-        return pingMaster.isReachable();
     }
 }
