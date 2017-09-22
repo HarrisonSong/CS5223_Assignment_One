@@ -9,21 +9,23 @@ import java.util.concurrent.Semaphore;
 
 public class Tracker implements TrackerInterface {
 
+    public static final int NAME_LENGTH = 2;
+
     private int N;
     private int K;
-    private Map<String, EndPoint> endPointsMap;
+    private EndPointsMap endPointsMap;
     private Semaphore semaphore = new Semaphore(1);
 
     public Tracker(){
         this.N = 0;
         this.K = 0;
-        this.endPointsMap = new HashMap<String, EndPoint>();
+        this.endPointsMap = new EndPointsMap();
     }
 
     public Tracker(int treasureNumber, int mazeDimension){
         this.K = treasureNumber;
         this.N = mazeDimension;
-        this.endPointsMap = new HashMap<String, EndPoint>();
+        this.endPointsMap = new EndPointsMap();
     }
 
     public static void main(String args[]) {
@@ -49,7 +51,6 @@ public class Tracker implements TrackerInterface {
                 return;
             }
         }
-
         try {
             Tracker tracker = new Tracker(N, K);
             stub = (TrackerInterface) UnicastRemoteObject.exportObject(tracker, port);
@@ -73,43 +74,18 @@ public class Tracker implements TrackerInterface {
      */
 
     public boolean registerNewPlayer(String IP, int port, String playName){
-        boolean isSuccessfullyRegistered = false;
-        try {
-            semaphore.acquire();
-            try {
-                if(!isPlayerNameUsed(playName)){
-                    this.endPointsMap.put(playName, new EndPoint(IP, port));
-                    isSuccessfullyRegistered = true;
-                }
-            } finally {
-                semaphore.release();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if(!this.endPointsMap.isPlayerNameUsed(playName) && playName.length() == NAME_LENGTH){
+            return this.endPointsMap.addNewEndPoint(playName, IP, port);
         }
-        return isSuccessfullyRegistered;
+        return false;
     }
 
     public boolean resetTrackerEndPointsMap(Map updatedMap){
-        boolean isSuccessful = true;
-        try {
-            semaphore.acquire();
-            try {
-                this.endPointsMap.clear();
-                this.endPointsMap = updatedMap;
-            } finally {
-                semaphore.release();
-            }
-        } catch (InterruptedException e){
-            isSuccessful = false;
-            e.printStackTrace();
-        }
-
-        return isSuccessful;
+        return this.endPointsMap.updateEndPointsMap(updatedMap);
     }
 
     public Map<String, EndPoint> retrieveEndPointsMap() {
-        return this.endPointsMap;
+        return this.endPointsMap.retrieveEndPointsMap();
     }
 
     public int getK() {
@@ -118,19 +94,6 @@ public class Tracker implements TrackerInterface {
 
     public int getN() {
         return this.N;
-    }
-
-    /**
-     * helper method
-     */
-
-    private boolean isPlayerNameUsed(String newPlayerName){
-        for(String name : this.endPointsMap.keySet()){
-            if(name.equals(newPlayerName)){
-                return true;
-            }
-        }
-        return false;
     }
 }
 

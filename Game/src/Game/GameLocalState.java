@@ -14,7 +14,7 @@ public class GameLocalState {
     private EndPoint trackerEndPoint;
 
     public GameLocalState() {
-        playName = new String(new char[Game.NameLength]);
+        playName = new String(new char[Game.NAME_LENGTH]);
         playerType = PlayerType.Standard;
         localEndPoint = new EndPoint();
         primaryEndPoint = new EndPoint();

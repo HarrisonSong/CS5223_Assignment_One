@@ -13,9 +13,9 @@ public class Game implements GameInterface {
     /**
      * static game global constants
      */
-    public static int NameLength = 2;
-    public static int MazeSize = 15;
-    public static int TreasureSize = 10;
+    public static final int NAME_LENGTH = 2;
+    public static int MazeSize;
+    public static int TreasureSize;
 
     /**
      * game data to be bind with GUI
@@ -95,6 +95,8 @@ public class Game implements GameInterface {
         //(Primary Only) Ping standard player one by one
         //fail, remove from list, update gameGlobalState
         //success do nothing
+
+
     }
 
     /**
