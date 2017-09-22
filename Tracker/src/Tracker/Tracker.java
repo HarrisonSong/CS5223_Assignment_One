@@ -1,7 +1,5 @@
 package Tracker;
 
-//import Common.*;
-
 import java.rmi.Remote;
 import java.util.*;
 import java.rmi.registry.Registry;
@@ -11,358 +9,128 @@ import java.util.concurrent.Semaphore;
 
 public class Tracker implements TrackerInterface {
 
-    private int N = 0;
-    private int K = 0;
-    private List<EndPoint> EndPointList;
+    private int N;
+    private int K;
+    private Map<String, EndPoint> endPointsMap;
     private Semaphore semaphore = new Semaphore(1);
 
-
     public Tracker(){
-        EndPointList = new List<EndPoint>() {
-            @Override
-            public int size() {
-                return 0;
-            }
-
-            @Override
-            public boolean isEmpty() {
-                return false;
-            }
-
-            @Override
-            public boolean contains(Object o) {
-                return false;
-            }
-
-            @Override
-            public Iterator<EndPoint> iterator() {
-                return null;
-            }
-
-            @Override
-            public Object[] toArray() {
-                return new Object[0];
-            }
-
-            @Override
-            public <T> T[] toArray(T[] a) {
-                return null;
-            }
-
-            @Override
-            public boolean add(EndPoint endPoint) {
-                return false;
-            }
-
-            @Override
-            public boolean remove(Object o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean addAll(Collection<? extends EndPoint> c) {
-                return false;
-            }
-
-            @Override
-            public boolean addAll(int index, Collection<? extends EndPoint> c) {
-                return false;
-            }
-
-            @Override
-            public boolean removeAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean retainAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public void clear() {
-
-            }
-
-            @Override
-            public EndPoint get(int index) {
-                return null;
-            }
-
-            @Override
-            public EndPoint set(int index, EndPoint element) {
-                return null;
-            }
-
-            @Override
-            public void add(int index, EndPoint element) {
-
-            }
-
-            @Override
-            public EndPoint remove(int index) {
-                return null;
-            }
-
-            @Override
-            public int indexOf(Object o) {
-                return 0;
-            }
-
-            @Override
-            public int lastIndexOf(Object o) {
-                return 0;
-            }
-
-            @Override
-            public ListIterator<EndPoint> listIterator() {
-                return null;
-            }
-
-            @Override
-            public ListIterator<EndPoint> listIterator(int index) {
-                return null;
-            }
-
-            @Override
-            public List<EndPoint> subList(int fromIndex, int toIndex) {
-                return null;
-            }
-        };
+        this.N = 0;
+        this.K = 0;
+        this.endPointsMap = new HashMap<String, EndPoint>();
     }
 
-    public Tracker(int t_k, int t_n){
-        K = t_k;
-        N = t_n;
-        EndPointList = new List<EndPoint>() {
-            @Override
-            public int size() {
-                return 0;
-            }
-
-            @Override
-            public boolean isEmpty() {
-                return false;
-            }
-
-            @Override
-            public boolean contains(Object o) {
-                return false;
-            }
-
-            @Override
-            public Iterator<EndPoint> iterator() {
-                return null;
-            }
-
-            @Override
-            public Object[] toArray() {
-                return new Object[0];
-            }
-
-            @Override
-            public <T> T[] toArray(T[] a) {
-                return null;
-            }
-
-            @Override
-            public boolean add(EndPoint endPoint) {
-                return false;
-            }
-
-            @Override
-            public boolean remove(Object o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean addAll(Collection<? extends EndPoint> c) {
-                return false;
-            }
-
-            @Override
-            public boolean addAll(int index, Collection<? extends EndPoint> c) {
-                return false;
-            }
-
-            @Override
-            public boolean removeAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean retainAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public void clear() {
-
-            }
-
-            @Override
-            public EndPoint get(int index) {
-                return null;
-            }
-
-            @Override
-            public EndPoint set(int index, EndPoint element) {
-                return null;
-            }
-
-            @Override
-            public void add(int index, EndPoint element) {
-
-            }
-
-            @Override
-            public EndPoint remove(int index) {
-                return null;
-            }
-
-            @Override
-            public int indexOf(Object o) {
-                return 0;
-            }
-
-            @Override
-            public int lastIndexOf(Object o) {
-                return 0;
-            }
-
-            @Override
-            public ListIterator<EndPoint> listIterator() {
-                return null;
-            }
-
-            @Override
-            public ListIterator<EndPoint> listIterator(int index) {
-                return null;
-            }
-
-            @Override
-            public List<EndPoint> subList(int fromIndex, int toIndex) {
-                return null;
-            }
-        };
-    }
-
-    public List<EndPoint> registerNewPlayer(String IP, int Port){
-
-        try {
-            semaphore.acquire();
-            try {
-                EndPoint newOne = new EndPoint(IP, Port);
-                EndPointList.add(newOne);
-            } finally {
-                semaphore.release();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return EndPointList;
-    }
-
-    public boolean resetTrackerList(List<EndPoint> updatedList){
-        boolean result = true;
-
-        try {
-            semaphore.acquire();
-
-            try {
-                EndPointList.clear();
-                EndPointList = updatedList;
-            } finally {
-                semaphore.release();
-            }
-        } catch (InterruptedException e){
-            result = false;
-            e.printStackTrace();
-        }
-
-        return result;
-    }
-
-    public int getK() {
-        return K;
-    }
-
-    public int getN() {
-        return N;
-    }
-
-    public List<EndPoint> getEndPointList() {
-        List<EndPoint> temp = null;
-        try {
-            semaphore.acquire();
-            try {
-                temp = EndPointList;
-            } finally {
-                semaphore.release();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return temp;
-    }
-
-    public void setK(int t_k){
-        K = t_k;
-    }
-
-    public void setN(int t_n){
-        N = t_n;
+    public Tracker(int treasureNumber, int mazeDimension){
+        this.K = treasureNumber;
+        this.N = mazeDimension;
+        this.endPointsMap = new HashMap<String, EndPoint>();
     }
 
     public static void main(String args[]) {
         Remote stub = null;
         Registry registry = null;
-        int p = 0;
+        int port = 0;
         int N = 0;
         int K = 0;
+        if(args.length < 3){
+            System.err.println("Not enough parameters.");
+            System.exit(0);
+            return;
+        }
 
         if (args.length == 3) {
             try {
-                p = Integer.parseInt(args[0]);
+                port = Integer.parseInt(args[0]);
                 N = Integer.parseInt(args[1]);
                 K = Integer.parseInt(args[2]);
-
             } catch (NumberFormatException e) {
-                return ;
+                System.err.println("Failed to get required parameters.");
+                System.exit(0);
+                return;
             }
         }
 
         try {
-            Tracker obj = new Tracker(N, K);
-
-            stub = (TrackerInterface) UnicastRemoteObject.exportObject(obj, p);
+            Tracker tracker = new Tracker(N, K);
+            stub = (TrackerInterface) UnicastRemoteObject.exportObject(tracker, port);
             registry = LocateRegistry.getRegistry();
             registry.bind("Tracker", stub);
-
-            System.err.println("Tracker ready");
+            System.out.println("Tracker ready");
         } catch (Exception e) {
-            try{
+            try {
                 registry.unbind("Tracker");
-                registry.bind("Tracker",stub);
-                System.err.println("Server ready");
+                registry.bind("Tracker", stub);
+                System.out.println("Tracker ready");
             }catch(Exception ee){
-                System.err.println("Server exception: " + ee.toString());
+                System.err.println("Tracker exception: " + ee.toString());
                 ee.printStackTrace();
             }
         }
+    }
 
-        return ;
+    /**
+     * TRACKER INTERFACE IMPLEMENTATION
+     */
+
+    public boolean registerNewPlayer(String IP, int port, String playName){
+        boolean isSuccessfullyRegistered = false;
+        try {
+            semaphore.acquire();
+            try {
+                if(!isPlayerNameUsed(playName)){
+                    this.endPointsMap.put(playName, new EndPoint(IP, port));
+                    isSuccessfullyRegistered = true;
+                }
+            } finally {
+                semaphore.release();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return isSuccessfullyRegistered;
+    }
+
+    public boolean resetTrackerEndPointsMap(Map updatedMap){
+        boolean isSuccessful = true;
+        try {
+            semaphore.acquire();
+            try {
+                this.endPointsMap.clear();
+                this.endPointsMap = updatedMap;
+            } finally {
+                semaphore.release();
+            }
+        } catch (InterruptedException e){
+            isSuccessful = false;
+            e.printStackTrace();
+        }
+
+        return isSuccessful;
+    }
+
+    public Map<String, EndPoint> retrieveEndPointsMap() {
+        return this.endPointsMap;
+    }
+
+    public int getK() {
+        return this.K;
+    }
+
+    public int getN() {
+        return this.N;
+    }
+
+    /**
+     * helper method
+     */
+
+    private boolean isPlayerNameUsed(String newPlayerName){
+        for(String name : this.endPointsMap.keySet()){
+            if(name.equals(newPlayerName)){
+                return true;
+            }
+        }
+        return false;
     }
 }
 

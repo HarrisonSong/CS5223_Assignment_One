@@ -76,13 +76,13 @@ public class GameGlobalState {
             Pair currentLocation = targetPlayer.getCurrentPosition();
             switch (cmd){
                 case West:
-                    currentLocation.setCol(currentLocation.getCol() - 1);
+                    currentLocation.setColumn(currentLocation.getColumn() - 1);
                     break;
                 case South:
                     currentLocation.setRow(currentLocation.getRow() - 1);
                     break;
                 case East:
-                    currentLocation.setCol(currentLocation.getCol() + 1);
+                    currentLocation.setColumn(currentLocation.getColumn() + 1);
                     break;
                 case North:
                     currentLocation.setRow(currentLocation.getRow() + 1);

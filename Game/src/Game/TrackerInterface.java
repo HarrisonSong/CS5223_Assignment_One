@@ -1,16 +1,13 @@
 package Game;
 
-import Common.EndPoint;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.List;
-
+import java.util.Map;
 
 public interface TrackerInterface extends Remote {
-    List<EndPoint> registerNewPlayer(String IP, int Port) throws RemoteException;
-    boolean resetTrackerList(List<EndPoint> updatedList) throws RemoteException;
+    boolean registerNewPlayer(String IP, int port, String playName) throws RemoteException, InterruptedException;
+    boolean resetTrackerEndPointsMap(Map updatedMap) throws RemoteException, InterruptedException;
+    Map retrieveEndPointsMap() throws RemoteException, InterruptedException;
     int getK() throws RemoteException;
     int getN() throws RemoteException;
-    List<EndPoint> getEndPointList() throws RemoteException;
-
 }

@@ -3,22 +3,24 @@ package Common;
 import Game.Game;
 import java.util.concurrent.ThreadLocalRandom;
 
-//use to represent location in maze
 public class Pair {
     private int row = 0;
-    private int col = 0;
+    private int column = 0;
 
     public Pair(){}
 
-    //generate a random between (0,0) (max, max)
+    /**
+     * construct a point in the range between (0,0) and (max, max)
+     * @param max
+     */
     public Pair(int max) {
         row = ThreadLocalRandom.current().nextInt(0, max);
-        col = ThreadLocalRandom.current().nextInt(0, max);
+        column = ThreadLocalRandom.current().nextInt(0, max);
     }
 
     public Pair(int row, int column) {
         this.row = row;
-        this.col = column;
+        this.column = column;
     }
 
     public int getRow() {
@@ -29,16 +31,16 @@ public class Pair {
         this.row = row;
     }
 
-    public int getCol() {
+    public int getColumn() {
         return row;
     }
 
-    public void setCol(int column) {
-        this.col = column;
+    public void setColumn(int column) {
+        this.column = column;
     }
 
     public boolean isValid() {
-        return (row >= 0 && col >= 0 && row < Game.TreasureSize && col < Game.TreasureSize);
+        return (row >= 0 && column >= 0 && row < Game.TreasureSize && column < Game.TreasureSize);
     }
 
     @Override
@@ -46,7 +48,7 @@ public class Pair {
         if(obj == null){return false;}
         if(obj == this) {return true;}
         if(!(obj instanceof Pair)){return false;}
-        if(((Pair) obj).row == this.row && ((Pair) obj).col == this.col) {return true;}
+        if(((Pair) obj).row == this.row && ((Pair) obj).column == this.column) {return true;}
         else{return false;}
     }
 
