@@ -9,6 +9,8 @@ import Game.BackgroundPing.SingleEndPointLiveChecker;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
+import sun.awt.SunHints;
+
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -141,7 +143,9 @@ public class Game implements GameInterface {
             TrackerInterface tracker = (TrackerInterface) trackerRegistry.lookup("Tracker");
 
             String localIP = EndPoint.getLocalIP();
-            if(tracker.registerNewPlayer(localIP, DEFAULT_PLAYER_ACCESS_PORT, playName)){
+            int localPort = DEFAULT_PLAYER_ACCESS_PORT;
+
+            if(tracker.registerNewPlayer(localIP, localPort, playName)){
 
                 /**
                  * Initialize and collect necessary parameters from tracker
@@ -168,49 +172,147 @@ public class Game implements GameInterface {
                         game.backgroundScheduledTask = game.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(game.retrieveEnhancedEndPointsMap(), (name) -> game.handleStandardPlayerUnavailability(name), () -> game.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
 
                         break;
-                    }
-                    case 2: {
-
-                        game.setupGame(playName, localIP, PlayerType.Backup);
-
-                        /**
-                         * Setup RMI connection to primary server
-                         */
-                        Registry primaryRegistry = LocateRegistry.getRegistry(game.gameLocalState.getPrimaryEndPoint().getEndPoint().getIPAddress(), game.gameLocalState.getPrimaryEndPoint().getEndPoint().getPort());
-                        String primaryPlayerName = game.gameLocalState.getPrimaryEndPoint().getId();
-                        game.primaryServer = (GameInterface) primaryRegistry.lookup("Player_" + primaryPlayerName);
-
-                        /**
-                         * Ask Primary to join
-                         */
-                        game.primaryServer.join(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
-
-                        /**
-                         * Setup periodic ping to primary
-                         */
-                        game.scheduler = Executors.newScheduledThreadPool(0);
-                        game.backgroundScheduledTask  = game.scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(game.gameLocalState.getPrimaryEndPoint().getEndPoint(), () -> game.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-
-                        break;
-                    }
+                    } // End of Case 1
                     default: {
-                        game.setupGame(playName, localIP, PlayerType.Standard);
+                        /**
+                         *  Check primary
+                         */
+
+                        boolean PrimaryIsAlive = true;
+                        GameInterface t_primary = null;
 
                         /**
-                         * Setup RMI connection to primary server
+                         *  Go trough PlayerEndPoint List to find one alive, and contact Primary successfully.
                          */
-                        Registry primaryRegistry = LocateRegistry.getRegistry(game.gameLocalState.getPrimaryEndPoint().getEndPoint().getIPAddress(), game.gameLocalState.getPrimaryEndPoint().getEndPoint().getPort());
-                        String primaryPlayerName = game.gameLocalState.getPrimaryEndPoint().getId();
-                        game.primaryServer = (GameInterface) primaryRegistry.lookup("Player_" + primaryPlayerName);
+                        for(Map.Entry<String, EndPoint> entry : game.gameLocalState.getPlayerEndPointsMap().entrySet()) {
+                            String key = entry.getKey();
+                            EndPoint value = entry.getValue();
+
+                            if (key == playName)
+                                continue;
+
+                            GameInterface t_Alive = game.contactGameEndPoint(new IdEndPointPair(key, value));
+
+                            if (t_Alive != null){
+                                List<IdEndPointPair> BPList = null;
+                                try {
+                                    BPList = t_Alive.getPrimaryAndBackupEndPoints();
+                                } catch (RemoteException e){
+                                    continue;
+                                }
+
+                                t_primary = game.contactGameEndPoint(BPList.get(0));
+                                if (t_primary != null)
+                                {
+                                    try{
+                                        game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
+
+                                        List<IdEndPointPair> t_list = game.getPrimaryAndBackupEndPoints();
+
+                                        IdEndPointPair t_back = t_list.get(1);
+
+                                        // Check if i am the backup
+                                        if (t_back != null) {
+                                            game.gameLocalState.setBackupEndPoint(t_back);
+
+                                            if (t_back.getId() == playName)
+                                            {
+                                                game.setupGame(playName, localIP, PlayerType.Backup );
+                                            } else {
+                                                game.setupGame(playName, localIP, PlayerType.Standard);
+                                            }
+                                        }
+
+                                    } catch (RemoteException e){
+                                        // No backup
+                                        if (BPList.get(1) == null) {
+                                            PrimaryIsAlive = false;
+                                            break;
+                                        }
+
+                                        // Wait for backup to become Primary
+                                        Thread.sleep(1300);
+                                        t_primary = game.contactGameEndPoint(BPList.get(1));
+
+                                        game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
+
+                                        List<IdEndPointPair> t_list = game.getPrimaryAndBackupEndPoints();
+
+                                        IdEndPointPair t_back = t_list.get(1);
+
+                                        // Check if i am the backup
+                                        if (t_back != null) {
+                                            game.gameLocalState.setBackupEndPoint(t_back);
+
+                                            if (t_back.getId() == playName)
+                                            {
+                                                game.setupGame(playName, localIP, PlayerType.Backup );
+                                            } else {
+                                                game.setupGame(playName, localIP, PlayerType.Standard);
+                                            }
+                                        }
+                                    }
+
+                                } else {
+
+                                    // No backup
+                                    if (BPList.get(1) == null) {
+                                        PrimaryIsAlive = false;
+                                        break;
+                                    }
+
+                                    // Wait for backup to become Primary
+                                    Thread.sleep(1300);
+                                    t_primary = game.contactGameEndPoint(BPList.get(1));
+
+                                    game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
+
+                                    List<IdEndPointPair> t_list = game.getPrimaryAndBackupEndPoints();
+
+                                    IdEndPointPair t_back = t_list.get(1);
+
+                                    // Check if i am the backup
+                                    if (t_back != null) {
+                                        game.gameLocalState.setBackupEndPoint(t_back);
+
+                                        if (t_back.getId() == playName)
+                                        {
+                                            game.setupGame(playName, localIP, PlayerType.Backup );
+                                        } else {
+                                            game.setupGame(playName, localIP, PlayerType.Standard);
+                                        }
+                                    }
+
+                                }
+
+                            } else {
+                                continue;
+                            }
+
+                        }
+
 
                         /**
-                         * Ask Primary to join
+                         *  If there is Primary Alive
                          */
-                        game.primaryServer.join(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
+                        if (!PrimaryIsAlive) {
+
+                            /**
+                             * Set up as primary
+                             */
+                            game.setupGameAsPrimaryServer(playName, localIP);
+                            /**
+                             * Setup periodic ping to each player
+                             */
+                            game.scheduler = Executors.newScheduledThreadPool(0);
+                            game.backgroundScheduledTask = game.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(game.retrieveEnhancedEndPointsMap(), (name) -> game.handleStandardPlayerUnavailability(name), () -> game.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
+
+                        }
 
                         break;
-                    }
-                }
+                    } // End of Default
+
+                } // End of Switch
 
                 /**
                  * Continuously read user input from
@@ -252,6 +354,15 @@ public class Game implements GameInterface {
     }
 
     /**
+     *
+     */
+    private boolean handlePrimaryCrash(IdEndPointPair backup, String localIP, int localPort, String playName){
+
+
+        return false;
+    }
+
+    /**
      * Assign player to be backup server
      */
     private void assignBackupServer(){
@@ -262,7 +373,7 @@ public class Game implements GameInterface {
             }
             String backupPlayerName = this.gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
             EndPoint newEndPoint = this.gameLocalState.getPlayerEndPointsMap().get(backupPlayerName);
-            this.backupServer = this.contactGameEndPoint(newEndPoint, backupPlayerName);
+            this.backupServer = this.contactGameEndPoint(new IdEndPointPair(backupPlayerName,newEndPoint));
             if(this.backupServer != null){
                 setBackupServer(latestActivePlayerIndex);
                 break;
@@ -400,8 +511,10 @@ public class Game implements GameInterface {
     public void setupGame(String playName, String localIPAddress, PlayerType type){
         this.gameLocalState.setPlayName(playName);
         this.gameLocalState.setPlayerType(type);
+
         this.gameLocalState.setLocalEndPoint(new IdEndPointPair(playName, new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT)));
-        this.gameGlobalState.addNewPlayerByName(playName, type);
+        //this.gameGlobalState.addNewPlayerByName(playName, type);
+
     }
 
     /**
@@ -539,11 +652,11 @@ public class Game implements GameInterface {
         return result;
     }
 
-    private GameInterface contactGameEndPoint(EndPoint endPoint, String playerName){
+    private GameInterface contactGameEndPoint(IdEndPointPair pair){
         try {
-            Registry backupRegistry = LocateRegistry.getRegistry(endPoint.getIPAddress(), endPoint.getPort());
+            Registry backupRegistry = LocateRegistry.getRegistry(pair.getEndPoint().getIPAddress(), pair.getEndPoint().getPort());
             try {
-                GameInterface targetPlayer = (GameInterface)backupRegistry.lookup("Player_" + playerName);
+                GameInterface targetPlayer = (GameInterface)backupRegistry.lookup("Player_" + pair.getId());
                 return targetPlayer;
             } catch (NotBoundException notBoundException) {
                 notBoundException.printStackTrace();
