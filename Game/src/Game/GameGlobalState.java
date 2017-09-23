@@ -12,12 +12,13 @@ public class GameGlobalState {
 
     private List<Player> playerList = new ArrayList<Player>();
     private List<mazePair> treasureLocation = new ArrayList<mazePair>(Game.TreasureSize);
-    private int latestActivePlayerIndex = -1;
+    private Stack<Integer> activePlayerQueue = new Stack<>();
 
     public void initialize(Player firstPlayer) {
         for(int i=0; i < Game.TreasureSize; i++) {
             treasureLocation.add(new mazePair(Game.MazeSize));
         }
+        activePlayerQueue.push(0);
         playerList.add(firstPlayer);
     }
 
@@ -48,6 +49,7 @@ public class GameGlobalState {
                 }
             }
             if(!found){
+                activePlayerQueue.push(this.playerList.size() - 1);
                 this.playerList.add(new Player(name, newLocation, 0, type));
                 return true;
             }
@@ -57,6 +59,7 @@ public class GameGlobalState {
 
     public boolean removePlayerByName(String name){
         if(!isPlayerNameUsed(name)) return false;
+        activePlayerQueue.removeElement(getIndexOfPlayerByName(name));
         this.playerList.remove(getIndexOfPlayerByName(name));
         return true;
     }
@@ -95,7 +98,12 @@ public class GameGlobalState {
                 List<Integer> treasures = findTreasuresAtLocation(currentLocation);
                 if(!treasures.isEmpty()){
                     targetPlayer.setScore(targetPlayer.getScore() + treasures.size());
-                    this.latestActivePlayerIndex = indexOfPlayer;
+
+                    /**
+                     * pop up the player to be latest active
+                     */
+                    this.activePlayerQueue.removeElement(indexOfPlayer);
+                    this.activePlayerQueue.push(indexOfPlayer);
                     generateNewTreasures(treasures);
                 }
             }
@@ -120,8 +128,12 @@ public class GameGlobalState {
         this.treasureLocation = treasureLocation;
     }
 
-    public int getLatestActivePlayerIndex() {
-        return latestActivePlayerIndex;
+    public int findNextActivePlayerIndex() {
+        if(this.activePlayerQueue.size() == 0){
+            return -1;
+        }else{
+            return this.activePlayerQueue.pop();
+        }
     }
 
 

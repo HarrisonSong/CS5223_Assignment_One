@@ -4,14 +4,10 @@ import Common.*;
 import Common.Pair.NameTypePair;
 import Common.Pair.mazePair;
 import Game.BackgroundPing.EndPointsLiveChecker;
-import Game.BackgroundPing.PingMaster;
 import Game.BackgroundPing.SingleEndPointLiveChecker;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
-import com.sun.corba.se.spi.resolver.LocalResolver;
-
-import javax.sound.midi.Track;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -173,6 +169,7 @@ public class Game implements GameInterface {
                         break;
                     }
                     case 2: {
+
                         game.setupGame(playName, localIP, PlayerType.Backup);
 
                         /**
@@ -257,7 +254,7 @@ public class Game implements GameInterface {
      * Assign player to be backup server
      */
     private void assignBackupServer(){
-        int latestActivePlayerIndex = this.gameGlobalState.getLatestActivePlayerIndex();
+        int latestActivePlayerIndex = this.gameGlobalState.findNextActivePlayerIndex();
         String backupPlayerName = this.gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
         EndPoint newEndPoint = this.gameLocalState.getPlayerEndPointsMap().get(backupPlayerName);
 
@@ -266,7 +263,7 @@ public class Game implements GameInterface {
             try {
                 backupServer = (GameInterface)backupRegistry.lookup("Player_" + backupPlayerName);
                 backupServer.promoteToBeBackup(this.gameGlobalState);
-                setBackupServer(this.gameGlobalState.getLatestActivePlayerIndex());
+                setBackupServer(latestActivePlayerIndex);
             } catch (NotBoundException notBoundException) {
                 //TODO: Handle backup connection failure
                 notBoundException.printStackTrace();
@@ -344,7 +341,6 @@ public class Game implements GameInterface {
     public void handleStandardPlayerUnavailability(String playerName){
         this.gameLocalState.removePlayerEndPoint(playerName);
         this.gameGlobalState.removePlayerByName(playerName);
-
     }
 
     public void handleBackupServerUnavailability(){
@@ -544,5 +540,21 @@ public class Game implements GameInterface {
             default: break;
         }
         return result;
+    }
+
+    private GameInterface contactGameEndPoint(EndPoint endPoint, String playerName){
+        try {
+            Registry backupRegistry = LocateRegistry.getRegistry(endPoint.getIPAddress(), endPoint.getPort());
+            try {
+                GameInterface targetPlayer = (GameInterface)backupRegistry.lookup("Player_" + playerName);
+                return targetPlayer;
+            } catch (NotBoundException notBoundException) {
+                notBoundException.printStackTrace();
+                return null;
+            }
+        } catch (RemoteException remoteException) {
+            remoteException.printStackTrace();
+            return null;
+        }
     }
 }
