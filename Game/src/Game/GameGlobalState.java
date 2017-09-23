@@ -136,7 +136,6 @@ public class GameGlobalState {
         }
     }
 
-
     //helper methods
     private void generateNewTreasures(List<Integer> list) {
         for(int i=0; i<list.size(); i++){
@@ -165,6 +164,14 @@ public class GameGlobalState {
             }
         }
         return false;
+    }
+
+    //return id of first player with the type asked.
+    public String getIdByType(PlayerType type) {
+        for(int i=0; i< playerList.size(); i++) {
+            if(playerList.get(i).getType() == type) return playerList.get(i).getName();
+        }
+        return "";
     }
 }
 
