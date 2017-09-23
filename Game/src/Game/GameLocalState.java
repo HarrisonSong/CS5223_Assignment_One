@@ -1,6 +1,6 @@
 package Game;
-
 import Common.EndPoint;
+import Common.Pair.IdEndPointPair;
 import Game.Player.PlayerType;
 
 import java.util.HashMap;
@@ -8,32 +8,30 @@ import java.util.Map;
 
 public class GameLocalState {
 
-    private String playName;
     private PlayerType playerType;
 
-    private EndPoint localEndPoint;
-    private EndPoint primaryEndPoint;
-    private EndPoint backupEndPoint;
-    private EndPoint trackerEndPoint;
+    private IdEndPointPair localEndPoint;
+    private IdEndPointPair primaryEndPoint;
+    private IdEndPointPair backupEndPoint;
+    private IdEndPointPair trackerEndPoint;
 
     private Map<String, EndPoint> playerEndPointsMap;
 
     public GameLocalState() {
-        playName = new String(new char[Game.NAME_LENGTH]);
         playerType = PlayerType.Standard;
-        localEndPoint = new EndPoint();
-        primaryEndPoint = new EndPoint();
-        backupEndPoint = new EndPoint();
-        trackerEndPoint = new EndPoint();
+        localEndPoint = new IdEndPointPair();
+        primaryEndPoint = new IdEndPointPair();
+        backupEndPoint = new IdEndPointPair();
+        trackerEndPoint = new IdEndPointPair();
         this.playerEndPointsMap = new HashMap<>();
     }
 
     public String getPlayName() {
-        return playName;
+        return localEndPoint.getId();
     }
 
     public void setPlayName(String name) {
-        this.playName = name;
+        localEndPoint.setId(name);
     }
 
     public PlayerType getPlayerType() {
@@ -44,31 +42,31 @@ public class GameLocalState {
         this.playerType = playerType;
     }
 
-    public EndPoint getLocalEndPoint() {
+    public IdEndPointPair getLocalEndPoint() {
         return localEndPoint;
     }
 
-    public void setLocalEndPoint(EndPoint localEndPoint) {
+    public void setLocalEndPoint(IdEndPointPair localEndPoint) {
         this.localEndPoint = localEndPoint;
     }
 
-    public EndPoint getPrimaryEndPoint() {
+    public IdEndPointPair getPrimaryEndPoint() {
         return primaryEndPoint;
     }
 
-    public void setPrimaryEndPoint(EndPoint primaryEndPoint) {
+    public void setPrimaryEndPoint(IdEndPointPair primaryEndPoint) {
         this.primaryEndPoint = primaryEndPoint;
     }
 
-    public EndPoint getBackupEndPoint() {
+    public IdEndPointPair getBackupEndPoint() {
         return backupEndPoint;
     }
 
-    public void setBackupEndPoint(EndPoint backupEndPoint) {
+    public void setBackupEndPoint(IdEndPointPair backupEndPoint) {
         this.backupEndPoint = backupEndPoint;
     }
 
-    public EndPoint getTrackerEndPoint() {
+    public IdEndPointPair getTrackerEndPoint() {
         return trackerEndPoint;
     }
 

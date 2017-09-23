@@ -2,6 +2,7 @@ package Common.Pair;
 import Common.EndPoint;
 
 public class IdEndPointPair extends Pair<String, EndPoint> {
+    public IdEndPointPair(){}
     public IdEndPointPair(String name, EndPoint ed) {
         super(name, ed);
     }
