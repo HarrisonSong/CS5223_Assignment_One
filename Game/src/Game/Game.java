@@ -11,6 +11,7 @@ import Game.Player.Player;
 import Game.Player.PlayerType;
 import sun.awt.SunHints;
 
+import javax.xml.ws.Endpoint;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -152,21 +153,22 @@ public class Game implements GameInterface {
                                     try{
                                         game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
 
-                                        List<IdEndPointPair> t_list = game.getPrimaryAndBackupEndPoints();
+                                        String primID = game.gameGlobalState.getIdByType(PlayerType.Primary);
+                                        String backID = game.gameGlobalState.getIdByType(PlayerType.Backup);
 
-                                        IdEndPointPair t_back = t_list.get(1);
+                                        EndPoint temp_p = game.gameLocalState.getPlayerEndPointsMap().get(primID);
+                                        EndPoint temp_b = game.gameLocalState.getPlayerEndPointsMap().get(backID);
 
-                                        // Check if i am the backup
-                                        if (t_back != null) {
-                                            game.gameLocalState.setBackupEndPoint(t_back);
+                                        game.gameLocalState.setBackupEndPoint(new IdEndPointPair(backID, temp_b));
+                                        game.gameLocalState.setPrimaryEndPoint(new IdEndPointPair(primID, temp_p));
 
-                                            if (t_back.getId() == playName)
-                                            {
-                                                game.setupGame(playName, localIP, PlayerType.Backup );
-                                            } else {
-                                                game.setupGame(playName, localIP, PlayerType.Standard);
-                                            }
+                                        if (backID == playName)
+                                        {
+                                            game.setupGame(playName, localIP, PlayerType.Backup );
+                                        } else {
+                                            game.setupGame(playName, localIP, PlayerType.Standard);
                                         }
+
 
                                     } catch (RemoteException e){
                                         // No backup
@@ -182,20 +184,20 @@ public class Game implements GameInterface {
 
                                         game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
 
-                                        List<IdEndPointPair> t_list = game.getPrimaryAndBackupEndPoints();
+                                        String primID = game.gameGlobalState.getIdByType(PlayerType.Primary);
+                                        String backID = game.gameGlobalState.getIdByType(PlayerType.Backup);
 
-                                        IdEndPointPair t_back = t_list.get(1);
+                                        EndPoint temp_p = game.gameLocalState.getPlayerEndPointsMap().get(primID);
+                                        EndPoint temp_b = game.gameLocalState.getPlayerEndPointsMap().get(backID);
 
-                                        // Check if i am the backup
-                                        if (t_back != null) {
-                                            game.gameLocalState.setBackupEndPoint(t_back);
+                                        game.gameLocalState.setBackupEndPoint(new IdEndPointPair(backID, temp_b));
+                                        game.gameLocalState.setPrimaryEndPoint(new IdEndPointPair(primID, temp_p));
 
-                                            if (t_back.getId() == playName)
-                                            {
-                                                game.setupGame(playName, localIP, PlayerType.Backup );
-                                            } else {
-                                                game.setupGame(playName, localIP, PlayerType.Standard);
-                                            }
+                                        if (backID == playName)
+                                        {
+                                            game.setupGame(playName, localIP, PlayerType.Backup );
+                                        } else {
+                                            game.setupGame(playName, localIP, PlayerType.Standard);
                                         }
                                     }
 
@@ -214,20 +216,20 @@ public class Game implements GameInterface {
 
                                     game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
 
-                                    List<IdEndPointPair> t_list = game.getPrimaryAndBackupEndPoints();
+                                    String primID = game.gameGlobalState.getIdByType(PlayerType.Primary);
+                                    String backID = game.gameGlobalState.getIdByType(PlayerType.Backup);
 
-                                    IdEndPointPair t_back = t_list.get(1);
+                                    EndPoint temp_p = game.gameLocalState.getPlayerEndPointsMap().get(primID);
+                                    EndPoint temp_b = game.gameLocalState.getPlayerEndPointsMap().get(backID);
 
-                                    // Check if i am the backup
-                                    if (t_back != null) {
-                                        game.gameLocalState.setBackupEndPoint(t_back);
+                                    game.gameLocalState.setBackupEndPoint(new IdEndPointPair(backID, temp_b));
+                                    game.gameLocalState.setPrimaryEndPoint(new IdEndPointPair(primID, temp_p));
 
-                                        if (t_back.getId() == playName)
-                                        {
-                                            game.setupGame(playName, localIP, PlayerType.Backup );
-                                        } else {
-                                            game.setupGame(playName, localIP, PlayerType.Standard);
-                                        }
+                                    if (backID == playName)
+                                    {
+                                        game.setupGame(playName, localIP, PlayerType.Backup );
+                                    } else {
+                                        game.setupGame(playName, localIP, PlayerType.Standard);
                                     }
 
                                 }
