@@ -242,7 +242,7 @@ public class Game implements GameInterface {
      * game setup when first player joins
      * @param playName
      */
-    private void setupGameAsPrimaryServer(String playName, String localIPAddress){
+    public void setupGameAsPrimaryServer(String playName, String localIPAddress){
         this.gameLocalState.setPlayName(playName);
         this.gameLocalState.setPlayerType(PlayerType.Primary);
         this.gameLocalState.setLocalEndPoint(new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT));
@@ -254,28 +254,23 @@ public class Game implements GameInterface {
      * Assign player to be backup server
      */
     private void assignBackupServer(){
-        int latestActivePlayerIndex = this.gameGlobalState.findNextActivePlayerIndex();
-        String backupPlayerName = this.gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
-        EndPoint newEndPoint = this.gameLocalState.getPlayerEndPointsMap().get(backupPlayerName);
-
-        try {
-            Registry backupRegistry = LocateRegistry.getRegistry(newEndPoint.getIPAddress(), newEndPoint.getPort());
-            try {
-                backupServer = (GameInterface)backupRegistry.lookup("Player_" + backupPlayerName);
-                backupServer.promoteToBeBackup(this.gameGlobalState);
-                setBackupServer(latestActivePlayerIndex);
-            } catch (NotBoundException notBoundException) {
-                //TODO: Handle backup connection failure
-                notBoundException.printStackTrace();
+        while(true){
+            int latestActivePlayerIndex = this.gameGlobalState.findNextActivePlayerIndex();
+            if(latestActivePlayerIndex == -1){
+                break;
             }
-        } catch (RemoteException remoteException) {
-            //TODO: Handle backup connection failure
-            remoteException.printStackTrace();
+            String backupPlayerName = this.gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
+            EndPoint newEndPoint = this.gameLocalState.getPlayerEndPointsMap().get(backupPlayerName);
+            this.backupServer = this.contactGameEndPoint(newEndPoint, backupPlayerName);
+            if(this.backupServer != null){
+                setBackupServer(latestActivePlayerIndex);
+                break;
+            }
         }
     }
 
     private void setBackupServer(int playerIndex){
-        if(this.gameLocalState.getPlayerType() == PlayerType.Standard && playerIndex != -1) {
+        if(this.gameLocalState.getPlayerType() == PlayerType.Standard) {
             this.gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
             this.gameLocalState.setBackupEndPoint(this.gameLocalState.getPlayerEndPointsMap().get(this.gameGlobalState.getPlayerList().get(playerIndex).getName()));
         }
@@ -347,7 +342,7 @@ public class Game implements GameInterface {
         String backupPlayerName = this.gameLocalState.getPlayerByEndPoint(this.gameLocalState.getBackupEndPoint());
         this.gameLocalState.removePlayerEndPoint(backupPlayerName);
         this.gameGlobalState.removePlayerByName(backupPlayerName);
-        assignBackupServer();
+        this.assignBackupServer();
         try {
             tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
         } catch (RemoteException e) {
@@ -363,7 +358,7 @@ public class Game implements GameInterface {
      *
      */
 
-    private void handlePrimaryServerUnavailability(){
+    public void handlePrimaryServerUnavailability(){
         String primaryPlayerName = this.gameLocalState.getPlayerByEndPoint(this.gameLocalState.getPrimaryEndPoint());
         this.gameLocalState.removePlayerEndPoint(primaryPlayerName);
         this.gameGlobalState.removePlayerByName(primaryPlayerName);
@@ -401,7 +396,7 @@ public class Game implements GameInterface {
      *
      */
 
-    private void setupGame(String playName, String localIPAddress, PlayerType type){
+    public void setupGame(String playName, String localIPAddress, PlayerType type){
         this.gameLocalState.setPlayName(playName);
         this.gameLocalState.setPlayerType(type);
         this.gameLocalState.setLocalEndPoint(new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT));
@@ -415,21 +410,10 @@ public class Game implements GameInterface {
      * @throws RemoteException
      * @throws AlreadyBoundException
      */
-    private void setupRegistry(String playName, Game game) throws RemoteException, AlreadyBoundException {
+    public void setupRegistry(String playName, Game game) throws RemoteException, AlreadyBoundException {
         GameInterface stub = (GameInterface) UnicastRemoteObject.exportObject(game, DEFAULT_PLAYER_ACCESS_PORT);
         Registry registry = LocateRegistry.createRegistry(DEFAULT_PLAYER_ACCESS_PORT);
         registry.bind("Player_" + playName, stub);
-    }
-
-    /**
-     * Update game global state according to primary
-     * server response
-     * @param gameState
-     */
-
-    private void updateGameGlobalState(GameGlobalState gameState){
-        this.gameGlobalState.setPlayerList(gameState.getPlayerList());
-        this.gameGlobalState.setTreasureLocation(gameState.getTreasureLocation());
     }
 
     /**
@@ -440,24 +424,7 @@ public class Game implements GameInterface {
      */
     public boolean updateBackupGameState(GameGlobalState gameState){
         if(this.gameLocalState.getPlayerType() == PlayerType.Backup){
-            updateGameGlobalState(gameState);
-        }
-        return false;
-    }
-
-    /**
-     * promote current game to be backup server
-     * @param gameState: updated global game state from primary server
-     * @return promotion status
-     */
-    public boolean promoteToBeBackup(GameGlobalState gameState) {
-        if(this.gameLocalState.getPlayerType() == PlayerType.Standard){
-            this.gameLocalState.setPlayerType(PlayerType.Backup);
-            this.gameLocalState.setBackupEndPoint(this.gameLocalState.getLocalEndPoint());
             this.updateGameGlobalState(gameState);
-            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-            scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(this.gameLocalState.getPrimaryEndPoint(), () -> this.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-            return true;
         }
         return false;
     }
@@ -488,10 +455,22 @@ public class Game implements GameInterface {
         }
     }
 
-
     /**
-     * helper methods
+     * promote current game to be backup server
+     * @param gameState: updated global game state from primary server
+     * @return promotion status
      */
+    public boolean promoteToBeBackup(GameGlobalState gameState) {
+        if(this.gameLocalState.getPlayerType() == PlayerType.Standard){
+            this.gameLocalState.setPlayerType(PlayerType.Backup);
+            this.gameLocalState.setBackupEndPoint(this.gameLocalState.getLocalEndPoint());
+            this.updateGameGlobalState(gameState);
+            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+            scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(this.gameLocalState.getPrimaryEndPoint(), () -> this.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Method to retrieve player name/type mapping with endpoint
@@ -509,6 +488,20 @@ public class Game implements GameInterface {
             }
         }
         return enhancedEndPointsMap;
+    }
+
+    /**
+     * HELPER METHODS
+     */
+
+    /**
+     * Update game global state according to primary
+     * server response
+     * @param gameState
+     */
+    private void updateGameGlobalState(GameGlobalState gameState){
+        this.gameGlobalState.setPlayerList(gameState.getPlayerList());
+        this.gameGlobalState.setTreasureLocation(gameState.getTreasureLocation());
     }
 
     /**
