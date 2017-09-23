@@ -61,61 +61,6 @@ public class Game implements GameInterface {
      * @param args
      */
     public static void main(String args[]) {
-        // Args: [Tracker IP], [Tracker Port], [Player ID]
-
-        /* Init Server */
-        // Set up Tracker Connection
-
-        // Get local IP and ports
-
-        // Try to contact Tracker
-        // Success, return with list of player Ip
-        // If the list is empty, become primary server, setup game (No one in the list) -- END
-        // Else,
-        // For LOOP: try contact with Play Ip(starting at the last one)
-        // All IPs in the list fail to contact, then become primary server, setup game (No alive one in the list) -- END
-        // Any one success, get Primary & backup, break the for loop
-        // While LOOP: while (Primary IP is not null):
-        // If contact primary server to join game
-        // Fail[primary crash],
-        // If backup IP is null, become primary server, setup game (No alive one in the list) -- END
-        // Else, send getPrimaryAndBackupEndPoints to backup server, update IPs, get new primary and backup
-        // Success,
-        // Fail, no server alive, setup itself as primary, and setup game -- END
-        // Success, break the while loop: return game state and current Primary & Backup. If backup == itself, setup its self to backup -- END
-        // Fail, exit with error
-
-
-        /* Play Mode */
-        // Get input from IO, loop
-        // '9' observed, exit
-        // non '9' observed,
-        // Case 1: Standard
-        //Try to call primary to makeMove
-        //timeout retry
-        //fail, send getPrimaryAndBackupEndPoints to backup stored, update Ips, call (new)server to makeMove (while loop?)
-        //success, update local game state
-        // Case 2: Primary
-        //Update locally, try to call backup to updateBackupGameState
-        // Fail, select an Standard player to be new backup, update BackupIp, gameGlobalState (while loop?)
-        // Success, do nothing
-        // Case 3: Backup
-        //Try to call primary to makeMove
-        // fail, promotePlayerToBePrimary, makeMove locally, then select an Standard player to be new backup and (while loop?)
-        // update backup's game state
-        // Success
-
-        //Ping (only do when no operation execute locally) (N-1)+ 1 + (N-1)*2 -> O(N)
-        //Ping primary server every 0.5s, (primary no need ping itself)
-        //fail,wait for 1s, send getPrimaryAndBackupEndPoints to backup stored, update Ips
-        //success do nothing
-        //Ping Backup every 0.5s, (backup no need ping itself)
-        //fail,wait for 1s, send getPrimaryAndBackupEndPoints to primary stored, update Ips
-        //success do nothing
-
-        //(Primary Only) Ping standard player one by one
-        //fail, remove from list, update gameGlobalState
-        //success do nothing
 
         String trackerIP = "";
         int trackerPort = 0;
@@ -231,7 +176,8 @@ public class Game implements GameInterface {
                                         }
 
                                         // Wait for backup to become Primary
-                                        Thread.sleep(1300);
+                                        TimeUnit.MILLISECONDS.sleep(1300);
+
                                         t_primary = game.contactGameEndPoint(BPList.get(1));
 
                                         game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
@@ -262,7 +208,8 @@ public class Game implements GameInterface {
                                     }
 
                                     // Wait for backup to become Primary
-                                    Thread.sleep(1300);
+                                    TimeUnit.MILLISECONDS.sleep(1300);
+
                                     t_primary = game.contactGameEndPoint(BPList.get(1));
 
                                     game.gameGlobalState =  t_primary.join(new EndPoint(localIP, localPort), playName);
@@ -564,6 +511,23 @@ public class Game implements GameInterface {
             try {
                 primaryServer.executeRequest(this.gameLocalState.getPlayName(), playerCommand);
             } catch (RemoteException e) {
+
+                try {
+                    TimeUnit.MILLISECONDS.sleep(1300);
+
+
+                    List<IdEndPointPair> t_list = backupServer.getPrimaryAndBackupEndPoints();
+                    gameLocalState.setPrimaryEndPoint(t_list.get(0));
+                    gameLocalState.setBackupEndPoint(t_list.get(1));
+                    primaryServer = contactGameEndPoint(t_list.get(0));
+                    backupServer = contactGameEndPoint(t_list.get(1));
+
+                    primaryServer.executeRequest(this.gameLocalState.getPlayName(), playerCommand);
+
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
+
                 e.printStackTrace();
             }
             if(request.equals(Command.Exit.getValue())){
