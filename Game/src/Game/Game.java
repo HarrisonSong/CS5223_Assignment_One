@@ -252,10 +252,8 @@ public class Game implements GameInterface {
                              * Setup periodic ping to each player
                              */
                             game.scheduler = Executors.newScheduledThreadPool(0);
-                            game.backgroundScheduledTask = game.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(game.retrieveEnhancedEndPointsMap(), (name) -> game.handleStandardPlayerUnavailability(name), () -> game.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-
+                            game.backgroundScheduledTask = game.scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(game.gameLocalState.getPrimaryEndPoint().getEndPoint(), () -> game.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
                         }
-
                         break;
                     } // End of Default
 
@@ -298,15 +296,6 @@ public class Game implements GameInterface {
         this.gameLocalState.setLocalEndPoint(new IdEndPointPair(playName, new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT)));
         Player primaryPlayer = new Player(playName, new mazePair(Game.MazeSize), 0, PlayerType.Primary);
         this.gameGlobalState.initialize(primaryPlayer);
-    }
-
-    /**
-     *
-     */
-    private boolean handlePrimaryCrash(IdEndPointPair backup, String localIP, int localPort, String playName){
-
-
-        return false;
     }
 
     /**
