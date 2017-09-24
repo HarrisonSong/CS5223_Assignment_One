@@ -29,7 +29,7 @@ public class EndPointsMap {
         return isSuccessfullyAdded;
     }
 
-    public boolean updateEndPointsMap(Map newMap){
+    public boolean updateEndPointsMap(Map<String, EndPoint> newMap){
         boolean isSuccessfullyUpdated = false;
         readWritelock.writeLock().lock();
         try {
@@ -42,7 +42,7 @@ public class EndPointsMap {
         return isSuccessfullyUpdated;
     }
 
-    public Map retrieveEndPointsMap(){
+    public Map<String, EndPoint> retrieveEndPointsMap(){
         Map<String, EndPoint> endPointMap;
         readWritelock.readLock().lock();
         try {

@@ -5,6 +5,11 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class mazePair extends Pair<Integer, Integer> {
 
+
+    public mazePair(){
+        super();
+    }
+
     /**
      * construct a point in the range between (0,0) and (max, max)
      * @param max
