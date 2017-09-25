@@ -1,4 +1,6 @@
-package Tracker;
+package Interface;
+
+import Tracker.EndPoint;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

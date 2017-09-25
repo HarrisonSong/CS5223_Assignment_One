@@ -1,5 +1,7 @@
 package Tracker;
 
+import Interface.TrackerInterface;
+
 import java.util.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -44,12 +46,19 @@ public class Tracker implements TrackerInterface {
                 return;
             }
         }
+        if(System.getSecurityManager() == null){
+            System.setSecurityManager(new SecurityManager());
+        }
         try {
             Tracker tracker = new Tracker(N, K);
             stub = (TrackerInterface) UnicastRemoteObject.exportObject(tracker, port);
-            registry = LocateRegistry.getRegistry();
+            registry = LocateRegistry.createRegistry(port);
 
             registry.bind("Tracker", stub);
+            String[] list = registry.list();
+            for(String i : list){
+                System.out.println(i);
+            }
             System.out.println("Tracker ready");
 
         } catch (Exception e) {
@@ -58,6 +67,7 @@ public class Tracker implements TrackerInterface {
                  * Release the potential existing process
                  * and rebind.
                  */
+                e.printStackTrace();
                 registry.unbind("Tracker");
                 registry.bind("Tracker", stub);
                 System.err.println("Server ready");
@@ -74,8 +84,10 @@ public class Tracker implements TrackerInterface {
 
     public boolean registerNewPlayer(String IP, int port, String playName){
         if(!this.endPointsMap.isPlayerNameUsed(playName) && playName.length() == NAME_LENGTH){
+            System.out.println("register success.");
             return this.endPointsMap.addNewEndPoint(playName, IP, port);
         }
+        System.out.println("register fail.");
         return false;
     }
 

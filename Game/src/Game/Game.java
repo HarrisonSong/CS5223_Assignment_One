@@ -9,9 +9,9 @@ import Game.BackgroundPing.SingleEndPointLiveChecker;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
-import sun.awt.SunHints;
+import Interface.GameInterface;
+import Interface.TrackerInterface;
 
-import javax.xml.ws.Endpoint;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -30,7 +30,7 @@ public class Game implements GameInterface {
      * static game global constants
      */
     public static final int NAME_LENGTH = 2;
-    public static final int DEFAULT_PLAYER_ACCESS_PORT = 80;
+    public static final int DEFAULT_PLAYER_ACCESS_PORT = 8888;
 
     public static int MazeSize;
     public static int TreasureSize;
@@ -84,8 +84,16 @@ public class Game implements GameInterface {
                 return;
             }
         }
+        if(System.getSecurityManager() == null){
+            System.setSecurityManager(new SecurityManager());
+        }
         try {
             Registry trackerRegistry = LocateRegistry.getRegistry(trackerIP, trackerPort);
+            String[] list = trackerRegistry.list();
+            System.out.println(list.length);
+            for(String i : list){
+                System.out.println(i);
+            }
             TrackerInterface tracker = (TrackerInterface) trackerRegistry.lookup("Tracker");
 
             String localIP = EndPoint.getLocalIP();

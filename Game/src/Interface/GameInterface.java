@@ -1,6 +1,7 @@
-package Game;
+package Interface;
 import Common.EndPoint;
 import Common.Pair.IdEndPointPair;
+import Game.GameGlobalState;
 import Game.Player.Command;
 import com.sun.xml.internal.bind.v2.model.core.ID;
 
