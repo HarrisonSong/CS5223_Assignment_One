@@ -89,11 +89,6 @@ public class Game implements GameInterface {
         }
         try {
             Registry trackerRegistry = LocateRegistry.getRegistry(trackerIP, trackerPort);
-            String[] list = trackerRegistry.list();
-            System.out.println(list.length);
-            for(String i : list){
-                System.out.println(i);
-            }
             TrackerInterface tracker = (TrackerInterface) trackerRegistry.lookup("Tracker");
 
             String localIP = EndPoint.getLocalIP();

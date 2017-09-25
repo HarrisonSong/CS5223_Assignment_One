@@ -55,12 +55,7 @@ public class Tracker implements TrackerInterface {
             registry = LocateRegistry.createRegistry(port);
 
             registry.bind("Tracker", stub);
-            String[] list = registry.list();
-            for(String i : list){
-                System.out.println(i);
-            }
             System.out.println("Tracker ready");
-
         } catch (Exception e) {
             try{
                 /**
