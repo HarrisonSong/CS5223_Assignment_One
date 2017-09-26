@@ -1,6 +1,7 @@
 package Game;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
+import Interface.TrackerInterface;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,11 +9,12 @@ import java.util.Map;
 public class GameLocalState {
 
     private PlayerType playerType;
+    private String name;
 
-    private GameInterface localStub;
-    private GameInterface primaryStub;
-    private GameInterface backupStub;
-    private GameInterface trackerStub;
+    private GameInterface localStub = null;
+    private GameInterface primaryStub= null;
+    private GameInterface backupStub= null;
+    private TrackerInterface trackerStub= null;
 
     private Map<String, GameInterface> playerStubsMap;
 
@@ -21,6 +23,13 @@ public class GameLocalState {
         this.playerStubsMap = new HashMap<>();
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public PlayerType getPlayerType() {
         return playerType;
@@ -54,11 +63,11 @@ public class GameLocalState {
         this.backupStub = backupStub;
     }
 
-    public GameInterface getTrackerStub() {
+    public TrackerInterface getTrackerStub() {
         return trackerStub;
     }
 
-    public void setTrackerStub(GameInterface trackerStub){
+    public void setTrackerStub(TrackerInterface trackerStub){
         this.trackerStub = trackerStub;
     }
 

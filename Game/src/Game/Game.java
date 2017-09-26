@@ -34,9 +34,9 @@ public class Game implements GameInterface {
     public static int MazeSize;
     public static int TreasureSize;
 
-    private TrackerInterface tracker;
-    private GameInterface primaryServer;
-    private GameInterface backupServer;
+//    private TrackerInterface tracker;
+//    private GameInterface primaryServer;
+//    private GameInterface backupServer;
 
     private ScheduledExecutorService scheduler;
     private ScheduledFuture backgroundScheduledTask;
@@ -410,7 +410,14 @@ public class Game implements GameInterface {
         String primaryPlayerName = this.gameLocalState.getPlayerByEndPoint(this.gameLocalState.getPrimaryEndPoint().getEndPoint());
         this.gameLocalState.removePlayerEndPoint(primaryPlayerName);
         this.gameGlobalState.removePlayerByName(primaryPlayerName);
-        promoteToBePrimary(this.gameLocalState.getPlayerEndPointsMap().size() == 1);
+        if(promoteToBePrimary(this.gameLocalState.getPlayerEndPointsMap().size() == 1)){
+            /**
+             * Reschedule the background ping task
+             */
+            this.backgroundScheduledTask.cancel(true);
+            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(this.retrieveEnhancedEndPointsMap(), (name) -> this.handleStandardPlayerUnavailability(name), () -> this.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
+
+        }
         try {
             tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
         } catch (RemoteException e) {

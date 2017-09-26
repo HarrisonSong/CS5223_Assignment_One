@@ -1,11 +1,9 @@
 package Game;
 
-import Common.EndPoint;
-import Common.Pair.NameEndPointPair;
 import Common.Pair.NameTypePair;
-import Game.BackgroundPing.EndPointsLiveChecker;
 import Game.Player.Command;
 import Game.Player.PlayerType;
+import Interface.GameInterface;
 
 import java.rmi.RemoteException;
 import java.util.HashMap;
@@ -19,18 +17,15 @@ public class PlayerFunctions {
      * promote current game to be primary server
      * @param isTheOnlyPlayer
      */
-    private void promoteToBePrimary(boolean isTheOnlyPlayer){
-        if(isTheOnlyPlayer || this.gameLocalState.getPlayerType() == PlayerType.Backup) {
-            this.gameLocalState.setPlayerType(PlayerType.Primary);
-            this.gameGlobalState.getPlayerList().get(this.gameGlobalState.getIndexOfPlayerByName(this.gameLocalState.getPlayName())).setType(PlayerType.Primary);
-            this.gameLocalState.setPrimaryEndPoint(this.gameLocalState.getLocalEndPoint());
+    private boolean promoteToBePrimary(boolean isTheOnlyPlayer, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+        if(isTheOnlyPlayer || gameLocalState.getPlayerType() == PlayerType.Backup) {
+            gameLocalState.setPlayerType(PlayerType.Primary);
+            gameGlobalState.getPlayerList().get(gameGlobalState.getIndexOfPlayerByName(gameLocalState.getName())).setType(PlayerType.Primary);
+            gameLocalState.setPrimaryStub(gameLocalState.getLocalStub());
 
-            /**
-             * Reschedule the background ping task
-             */
-            this.backgroundScheduledTask.cancel(true);
-            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(this.retrieveEnhancedEndPointsMap(), (name) -> this.handleStandardPlayerUnavailability(name), () -> this.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-        }
+            return true;
+            }
+        return false;
     }
 
     /**
@@ -39,12 +34,10 @@ public class PlayerFunctions {
      *
      */
 
-    public void setupGame(String playName, String localIPAddress, PlayerType type){
-        this.gameLocalState.setPlayName(playName);
-        this.gameLocalState.setPlayerType(type);
-
-        this.gameLocalState.setLocalEndPoint(new NameEndPointPair(playName, new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT)));
-        //this.gameGlobalState.addNewPlayerByName(playName, type);
+    public void setupGame(String playName, GameInterface stub, PlayerType type, GameLocalState gameLocalState){
+        gameLocalState.setName(playName);
+        gameLocalState.setPlayerType(type);
+        gameLocalState.setLocalStub(stub);
 
     }
 
@@ -52,24 +45,25 @@ public class PlayerFunctions {
      * Method for player to issue the user operation
      * @param request
      */
-    public void issueRequest(String request){
-        Command playerCommand = classifyPlayerInput(request);
+    public void issueRequest(String request, GameLocalState gameLocalState){
+        Command playerCommand;
+        try{
+             playerCommand= Command.valueOf(request);
+        }catch (Exception e){
+            playerCommand = Command.Invalid;
+        }
         if(!playerCommand.equals(Command.Invalid)){
             try {
-                primaryServer.primaryExecuteRemoteRequest(this.gameLocalState.getPlayName(), playerCommand);
+                gameLocalState.getPrimaryStub().primaryExecuteRemoteRequest(gameLocalState.getName(), request);
             } catch (RemoteException e) {
 
                 try {
                     TimeUnit.MILLISECONDS.sleep(1300);
+                    List<GameInterface> t_list = gameLocalState.getBackupStub().getPrimaryAndBackupStubs();
+                    gameLocalState.setPrimaryStub(t_list.get(0));
+                    gameLocalState.setBackupStub(t_list.get(1));
 
-
-                    List<NameEndPointPair> t_list = backupServer.getPrimaryAndBackupStubs();
-                    gameLocalState.setPrimaryEndPoint(t_list.get(0));
-                    gameLocalState.setBackupEndPoint(t_list.get(1));
-                    primaryServer = contactGameEndPoint(t_list.get(0));
-                    backupServer = contactGameEndPoint(t_list.get(1));
-
-                    primaryServer.primaryExecuteRemoteRequest(this.gameLocalState.getPlayName(), playerCommand);
+                    gameLocalState.getPrimaryStub().primaryExecuteRemoteRequest(gameLocalState.getName(), request);
 
                 } catch (Exception e1) {
                     e1.printStackTrace();
@@ -87,14 +81,14 @@ public class PlayerFunctions {
      * Method to retrieve player name/type mapping with endpoint
      * @return
      */
-    public Map retrieveEnhancedEndPointsMap(){
-        Map<NameTypePair, EndPoint> enhancedEndPointsMap = new HashMap<>();
-        for(Map.Entry<String, EndPoint> endpoint : this.gameLocalState.getPlayerEndPointsMap().entrySet()){
-            if(!endpoint.getValue().equals(this.gameLocalState.getPrimaryEndPoint())){
-                if(endpoint.getValue().equals(this.gameLocalState.getBackupEndPoint())){
-                    enhancedEndPointsMap.put(new NameTypePair(endpoint.getKey(), PlayerType.Backup), endpoint.getValue());
+    public Map retrieveEnhancedEndPointsMap(GameLocalState gameLocalState){
+        Map<NameTypePair, GameInterface> enhancedEndPointsMap = new HashMap<>();
+        for(Map.Entry<String, GameInterface> stub : gameLocalState.getPlayerStubsMap().entrySet()){
+            if(!stub.getValue().equals(gameLocalState.getPrimaryStub())){
+                if(stub.getValue().equals(gameLocalState.getBackupStub())){
+                    enhancedEndPointsMap.put(new NameTypePair(stub.getKey(), PlayerType.Backup), stub.getValue());
                 }else{
-                    enhancedEndPointsMap.put(new NameTypePair(endpoint.getKey(), PlayerType.Standard), endpoint.getValue());
+                    enhancedEndPointsMap.put(new NameTypePair(stub.getKey(), PlayerType.Standard), stub.getValue());
                 }
             }
         }

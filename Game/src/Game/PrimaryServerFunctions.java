@@ -1,10 +1,9 @@
 package Game;
 
-import Common.EndPoint;
-import Common.Pair.NameEndPointPair;
 import Common.Pair.mazePair;
 import Game.Player.Player;
 import Game.Player.PlayerType;
+import Interface.GameInterface;
 
 /**
  *
@@ -18,40 +17,37 @@ public class PrimaryServerFunctions {
      * game setup when first player joins
      * @param playName
      */
-    public void setupGameAsPrimaryServer(String playName, String localIPAddress){
-        this.gameLocalState.setPlayName(playName);
-        this.gameLocalState.setPlayerType(PlayerType.Primary);
-        this.gameLocalState.setLocalEndPoint(new NameEndPointPair(playName, new EndPoint(localIPAddress, DEFAULT_PLAYER_ACCESS_PORT)));
+    public static void setupGameAsPrimaryServer(String playName, GameInterface localStub, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+        gameLocalState.setName(playName);
+        gameLocalState.setPlayerType(PlayerType.Primary);
+        gameLocalState.setLocalStub(localStub);
         Player primaryPlayer = new Player(playName, new mazePair(Game.MazeSize), 0, PlayerType.Primary);
-        this.gameGlobalState.initialize(primaryPlayer);
+        gameGlobalState.initialize(primaryPlayer);
     }
 
     /**
      * Assign player to be backup server
      */
-    private void assignBackupServer(){
+    private void assignBackupServer(GameLocalState gameLocalState, GameGlobalState gameGlobalState){
         while(true){
-            int latestActivePlayerIndex = this.gameGlobalState.findNextActivePlayerIndex();
+            int latestActivePlayerIndex = gameGlobalState.findNextActivePlayerIndex();
             if(latestActivePlayerIndex == -1){
                 break;
             }
-            String backupPlayerName = this.gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
-            EndPoint newEndPoint = this.gameLocalState.getPlayerEndPointsMap().get(backupPlayerName);
-            this.backupServer = this.contactGameEndPoint(new NameEndPointPair(backupPlayerName,newEndPoint));
-            if(this.backupServer != null){
-                setBackupServer(latestActivePlayerIndex);
+            String backupPlayerName = gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
+            GameInterface newBackupStub = gameLocalState.getPlayerStubsMap().get(backupPlayerName);
+            gameLocalState.setBackupStub(newBackupStub);
+            if(gameLocalState.getBackupStub()!= null){
+                setBackupServer(latestActivePlayerIndex, gameLocalState, gameGlobalState);
                 break;
             }
         }
     }
 
-    private void setBackupServer(int playerIndex){
-        if(this.gameLocalState.getPlayerType() == PlayerType.Standard) {
-            this.gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
-            this.gameLocalState.setBackupEndPoint(new NameEndPointPair(
-                    this.gameLocalState.getPlayName(),
-                    this.gameLocalState.getPlayerEndPointsMap().get(this.gameLocalState.getPlayName()))
-            );
+    private void setBackupServer(int playerIndex,GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+        if(gameLocalState.getPlayerType() == PlayerType.Standard) {
+            gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
+            gameLocalState.setBackupStub(gameLocalState.getLocalStub());
         }
     }
 }
