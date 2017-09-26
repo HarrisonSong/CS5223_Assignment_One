@@ -1,7 +1,6 @@
 package Game;
-import Common.EndPoint;
-import Common.Pair.NameEndPointPair;
 import Game.Player.PlayerType;
+import Interface.GameInterface;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,29 +9,18 @@ public class GameLocalState {
 
     private PlayerType playerType;
 
-    private NameEndPointPair localEndPoint;
-    private NameEndPointPair primaryEndPoint;
-    private NameEndPointPair backupEndPoint;
-    private NameEndPointPair trackerEndPoint;
+    private GameInterface localStub;
+    private GameInterface primaryStub;
+    private GameInterface backupStub;
+    private GameInterface trackerStub;
 
-    private Map<String, EndPoint> playerEndPointsMap;
+    private Map<String, GameInterface> playerStubsMap;
 
     public GameLocalState() {
         playerType = PlayerType.Standard;
-        localEndPoint = new NameEndPointPair();
-        primaryEndPoint = new NameEndPointPair();
-        backupEndPoint = new NameEndPointPair();
-        trackerEndPoint = new NameEndPointPair();
-        this.playerEndPointsMap = new HashMap<>();
+        this.playerStubsMap = new HashMap<>();
     }
 
-    public String getPlayName() {
-        return localEndPoint.getName();
-    }
-
-    public void setPlayName(String name) {
-        localEndPoint.setName(name);
-    }
 
     public PlayerType getPlayerType() {
         return playerType;
@@ -42,57 +30,60 @@ public class GameLocalState {
         this.playerType = playerType;
     }
 
-    public NameEndPointPair getLocalEndPoint() {
-        return localEndPoint;
+    public GameInterface getLocalStub() {
+        return localStub;
     }
 
-    public void setLocalEndPoint(NameEndPointPair localEndPoint) {
-        this.localEndPoint = localEndPoint;
+    public void setLocalStub(GameInterface localStub) {
+        this.localStub = localStub;
     }
 
-    public NameEndPointPair getPrimaryEndPoint() {
-        return primaryEndPoint;
+    public GameInterface getPrimaryStub() {
+        return primaryStub;
     }
 
-    public void setPrimaryEndPoint(NameEndPointPair primaryEndPoint) {
-        this.primaryEndPoint = primaryEndPoint;
+    public void setPrimaryStub(GameInterface primaryStub) {
+        this.primaryStub = primaryStub;
     }
 
-    public NameEndPointPair getBackupEndPoint() {
-        return backupEndPoint;
+    public GameInterface getBackupStub() {
+        return backupStub;
     }
 
-    public void setBackupEndPoint(NameEndPointPair backupEndPoint) {
-        this.backupEndPoint = backupEndPoint;
+    public void setBackupStub(GameInterface backupStub) {
+        this.backupStub = backupStub;
     }
 
-    public NameEndPointPair getTrackerEndPoint() {
-        return trackerEndPoint;
+    public GameInterface getTrackerStub() {
+        return trackerStub;
     }
 
-    public Map<String, EndPoint> getPlayerEndPointsMap() {
-        return playerEndPointsMap;
+    public void setTrackerStub(GameInterface trackerStub){
+        this.trackerStub = trackerStub;
     }
 
-    public String getPlayerByEndPoint(EndPoint targetEndpoint) {
-        for(Map.Entry<String, EndPoint> endpoint : this.playerEndPointsMap.entrySet()){
-            if(endpoint.equals(targetEndpoint)){
-                return endpoint.getKey();
+    public Map<String, GameInterface> getPlayerStubsMap() {
+        return playerStubsMap;
+    }
+
+    public String getPlayerByStub(GameInterface targetStub) {
+        for(Map.Entry<String, GameInterface> Stub : this.playerStubsMap.entrySet()){
+            if(Stub.equals(targetStub)){
+                return Stub.getKey();
             }
         }
         return "";
     }
 
-
-    public void setPlayerEndPointsMap(Map<String, EndPoint> playerEndPointsMap) {
-        this.playerEndPointsMap = playerEndPointsMap;
+    public void setPlayerStubsMap(Map<String, GameInterface> playerStubsMap) {
+        this.playerStubsMap = playerStubsMap;
     }
 
-    public void addPlayerEndPoint(String playName, EndPoint endPoint){
-        this.playerEndPointsMap.put(playName, endPoint);
+    public void addPlayerStub(String playName, GameInterface Stub){
+        this.playerStubsMap.put(playName, Stub);
     }
 
-    public void removePlayerEndPoint(String playName){
-        this.playerEndPointsMap.remove(playName);
+    public void removePlayerStub(String playName){
+        this.playerStubsMap.remove(playName);
     }
 }
