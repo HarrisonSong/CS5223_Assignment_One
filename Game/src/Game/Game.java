@@ -341,7 +341,7 @@ public class Game implements GameInterface {
      * @param request
      * @return updated global game state
      */
-    public GameGlobalState primaryExecuteRemoteRequest(String playerName, Command request){
+    public Object primaryExecuteRemoteRequest(String name, String command){
         if(request.equals(Command.Exit)){
             this.gameLocalState.removePlayerEndPoint(playerName);
             this.gameGlobalState.removePlayerByName(playerName);
@@ -364,7 +364,7 @@ public class Game implements GameInterface {
      * @param playName
      * @return updated global game state
      */
-    public GameGlobalState primaryExecuteJoin(EndPoint IPAddress, String playName){
+    public Object primaryExecuteJoin(GameInterface stub, String name){
         if(this.gameLocalState.getPlayerEndPointsMap().size() == 1){
             this.gameLocalState.setBackupEndPoint(new NameEndPointPair(playName, IPAddress));
             this.gameGlobalState.addNewPlayerByName(playName, PlayerType.Backup);
@@ -467,7 +467,7 @@ public class Game implements GameInterface {
      * @param gameState
      * @return
      */
-    public boolean backupUpdateGameState(GameGlobalState gameState){
+    public boolean backupUpdateGameState(Object gameState){
         if(this.gameLocalState.getPlayerType() == PlayerType.Backup){
             this.updateGameGlobalState(gameState);
         }
@@ -525,7 +525,7 @@ public class Game implements GameInterface {
      * @param gameState: updated global game state from primary server
      * @return promotion status
      */
-    public boolean playerPromoteAsBackup(GameGlobalState gameState) {
+    public boolean playerPromoteAsBackup(Object gameState) {
         if(this.gameLocalState.getPlayerType() == PlayerType.Standard){
             this.gameLocalState.setPlayerType(PlayerType.Backup);
             this.gameLocalState.setBackupEndPoint(this.gameLocalState.getLocalEndPoint());
