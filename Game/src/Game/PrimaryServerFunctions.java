@@ -28,7 +28,7 @@ public class PrimaryServerFunctions {
     /**
      * Assign player to be backup server
      */
-    private void assignBackupServer(GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+    public static void assignBackupServer(GameLocalState gameLocalState, GameGlobalState gameGlobalState){
         while(true){
             int latestActivePlayerIndex = gameGlobalState.findNextActivePlayerIndex();
             if(latestActivePlayerIndex == -1){
@@ -44,7 +44,7 @@ public class PrimaryServerFunctions {
         }
     }
 
-    private void setBackupServer(int playerIndex,GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+    private static  void setBackupServer(int playerIndex,GameLocalState gameLocalState, GameGlobalState gameGlobalState){
         if(gameLocalState.getPlayerType() == PlayerType.Standard) {
             gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
             gameLocalState.setBackupStub(gameLocalState.getLocalStub());

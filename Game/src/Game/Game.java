@@ -388,17 +388,18 @@ public class Game implements GameInterface {
 
     //region Unavailability function calls
     public void handleStandardPlayerUnavailability(String playerName){
-        this.gameLocalState.removePlayerEndPoint(playerName);
+        this.gameLocalState.removePlayerStub(playerName);
         this.gameGlobalState.removePlayerByName(playerName);
     }
 
     public void handleBackupServerUnavailability(){
-        String backupPlayerName = this.gameLocalState.getPlayerByEndPoint(this.gameLocalState.getBackupEndPoint().getEndPoint());
-        this.gameLocalState.removePlayerEndPoint(backupPlayerName);
+        String backupPlayerName = this.gameLocalState.getPlayerByStub(this.gameLocalState.getBackupStub());
+        this.gameLocalState.removePlayerStub(backupPlayerName);
         this.gameGlobalState.removePlayerByName(backupPlayerName);
-        this.assignBackupServer();
+        PrimaryServerFunctions.assignBackupServer(this.gameLocalState, this.gameGlobalState);
         try {
-            tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
+            //tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
+            this.gameLocalState.getTrackerStub().resetTrackerStubs(this.gameLocalState.getPlayerStubsMap());
         } catch (RemoteException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -407,19 +408,19 @@ public class Game implements GameInterface {
     }
 
     public void handlePrimaryServerUnavailability(){
-        String primaryPlayerName = this.gameLocalState.getPlayerByEndPoint(this.gameLocalState.getPrimaryEndPoint().getEndPoint());
-        this.gameLocalState.removePlayerEndPoint(primaryPlayerName);
+        String primaryPlayerName = this.gameLocalState.getPlayerByStub(this.gameLocalState.getPrimaryStub());
+        this.gameLocalState.removePlayerStub(primaryPlayerName);
         this.gameGlobalState.removePlayerByName(primaryPlayerName);
-        if(promoteToBePrimary(this.gameLocalState.getPlayerEndPointsMap().size() == 1)){
+        if(PlayerFunctions.promoteToBePrimary((this.gameLocalState.getPlayerStubsMap().size() == 1), this.gameLocalState,this.gameGlobalState)){
             /**
              * Reschedule the background ping task
              */
             this.backgroundScheduledTask.cancel(true);
-            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(this.retrieveEnhancedEndPointsMap(), (name) -> this.handleStandardPlayerUnavailability(name), () -> this.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
+            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(PlayerFunctions.retrieveEnhancedEndPointsMap(this.gameLocalState), (name) -> this.handleStandardPlayerUnavailability(name), () -> this.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
 
         }
         try {
-            tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
+            this.gameLocalState.getTrackerStub().resetTrackerStubs(this.gameLocalState.getPlayerStubsMap());
         } catch (RemoteException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {

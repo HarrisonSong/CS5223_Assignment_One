@@ -17,7 +17,7 @@ public class PlayerFunctions {
      * promote current game to be primary server
      * @param isTheOnlyPlayer
      */
-    private boolean promoteToBePrimary(boolean isTheOnlyPlayer, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+    public static boolean promoteToBePrimary(boolean isTheOnlyPlayer, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
         if(isTheOnlyPlayer || gameLocalState.getPlayerType() == PlayerType.Backup) {
             gameLocalState.setPlayerType(PlayerType.Primary);
             gameGlobalState.getPlayerList().get(gameGlobalState.getIndexOfPlayerByName(gameLocalState.getName())).setType(PlayerType.Primary);
@@ -34,7 +34,7 @@ public class PlayerFunctions {
      *
      */
 
-    public void setupGame(String playName, GameInterface stub, PlayerType type, GameLocalState gameLocalState){
+    public static void setupGame(String playName, GameInterface stub, PlayerType type, GameLocalState gameLocalState){
         gameLocalState.setName(playName);
         gameLocalState.setPlayerType(type);
         gameLocalState.setLocalStub(stub);
@@ -45,7 +45,7 @@ public class PlayerFunctions {
      * Method for player to issue the user operation
      * @param request
      */
-    public void issueRequest(String request, GameLocalState gameLocalState){
+    public static void issueRequest(String request, GameLocalState gameLocalState){
         Command playerCommand;
         try{
              playerCommand= Command.valueOf(request);
@@ -81,7 +81,7 @@ public class PlayerFunctions {
      * Method to retrieve player name/type mapping with endpoint
      * @return
      */
-    public Map retrieveEnhancedEndPointsMap(GameLocalState gameLocalState){
+    public static Map retrieveEnhancedEndPointsMap(GameLocalState gameLocalState){
         Map<NameTypePair, GameInterface> enhancedEndPointsMap = new HashMap<>();
         for(Map.Entry<String, GameInterface> stub : gameLocalState.getPlayerStubsMap().entrySet()){
             if(!stub.getValue().equals(gameLocalState.getPrimaryStub())){
