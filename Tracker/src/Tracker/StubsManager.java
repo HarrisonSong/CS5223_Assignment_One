@@ -1,29 +1,25 @@
 package Tracker;
 
-import Common.EndPoint;
+import Interface.GameInterface;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class StubsMap {
-    private Map<String, EndPoint> endPoints;
+public class StubsManager {
+    private Map<String, GameInterface> stubsMap;
     private ReadWriteLock readWritelock = new ReentrantReadWriteLock();
 
-    public StubsMap() {
-        this.endPoints = new HashMap<String, EndPoint>();
+    public StubsManager() {
+        this.stubsMap = new HashMap<>();
     }
 
-    public StubsMap(HashMap<String, EndPoint> endPoints) {
-        this.endPoints = endPoints;
-    }
-
-    public boolean addNewEndPoint(String playName, String IP, int port){
-        boolean isSuccessfullyAdded = false;
+    public boolean addNewStub(String playName, GameInterface stub){
+        boolean isSuccessfullyAdded;
         readWritelock.writeLock().lock();
         try {
-            this.endPoints.put(playName, new EndPoint(IP, port));
+            this.stubsMap.put(playName, stub);
             isSuccessfullyAdded = true;
         } finally {
             readWritelock.writeLock().unlock();
@@ -31,12 +27,12 @@ public class StubsMap {
         return isSuccessfullyAdded;
     }
 
-    public boolean updateEndPointsMap(Map<String, EndPoint> newMap){
-        boolean isSuccessfullyUpdated = false;
+    public boolean updateStubsMap(Map<String, GameInterface> newMap){
+        boolean isSuccessfullyUpdated;
         readWritelock.writeLock().lock();
         try {
-            this.endPoints.clear();
-            this.endPoints = newMap;
+            this.stubsMap.clear();
+            this.stubsMap = newMap;
             isSuccessfullyUpdated = true;
         } finally {
             readWritelock.writeLock().unlock();
@@ -44,11 +40,11 @@ public class StubsMap {
         return isSuccessfullyUpdated;
     }
 
-    public Map<String, EndPoint> retrieveEndPointsMap(){
-        Map<String, EndPoint> endPointMap;
+    public Map<String, GameInterface> getStubsMap(){
+        Map<String, GameInterface> endPointMap;
         readWritelock.readLock().lock();
         try {
-            endPointMap = this.endPoints;
+            endPointMap = this.stubsMap;
         } finally {
             readWritelock.readLock().unlock();
         }
@@ -59,7 +55,7 @@ public class StubsMap {
         boolean isUsed = false;
         readWritelock.readLock().lock();
         try {
-            for(String name : this.endPoints.keySet()){
+            for(String name : this.stubsMap.keySet()){
                 if(name.equals(playName)){
                     isUsed = true;
                     break;
