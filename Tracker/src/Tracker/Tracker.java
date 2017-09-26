@@ -14,12 +14,12 @@ public class Tracker implements TrackerInterface {
 
     private int N;
     private int K;
-    private EndPointsMap endPointsMap;
+    private StubsMap stubsMap;
 
     public Tracker(int treasureNumber, int mazeDimension){
         this.K = treasureNumber;
         this.N = mazeDimension;
-        this.endPointsMap = new EndPointsMap();
+        this.stubsMap = new Tracker.StubsMap();
     }
 
     public static void main(String args[]) {
@@ -77,21 +77,21 @@ public class Tracker implements TrackerInterface {
      * TRACKER INTERFACE IMPLEMENTATION
      */
 
-    public boolean registerNewPlayer(String IP, int port, String playName){
-        if(!this.endPointsMap.isPlayerNameUsed(playName) && playName.length() == NAME_LENGTH){
+    public <T> boolean registerNewPlayer(String IP, int port, String playName, T stub){
+        if(!this.stubsMap.isPlayerNameUsed(playName) && playName.length() == NAME_LENGTH){
             System.out.println("register success.");
-            return this.endPointsMap.addNewEndPoint(playName, IP, port);
+            return this.stubsMap.addNewEndPoint(playName, IP, port);
         }
         System.out.println("register fail.");
         return false;
     }
 
-    public boolean resetTrackerEndPointsMap(Map<String, EndPoint> updatedMap){
-        return this.endPointsMap.updateEndPointsMap(updatedMap);
+    public <T> boolean resetTrackerEndPointsMap(Map<String, T> updatedStubs){
+        return this.stubsMap.updateEndPointsMap(updatedStubs);
     }
 
-    public Map<String, EndPoint> retrieveEndPointsMap() {
-        return this.endPointsMap.retrieveEndPointsMap();
+    public Map retrieveStubs() {
+        return this.stubsMap.retrieveEndPointsMap();
     }
 
     public int getK() {

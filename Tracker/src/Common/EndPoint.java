@@ -1,4 +1,4 @@
-package Tracker;
+package Common;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

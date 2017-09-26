@@ -1,19 +1,21 @@
 package Tracker;
 
+import Common.EndPoint;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class EndPointsMap {
+public class StubsMap {
     private Map<String, EndPoint> endPoints;
     private ReadWriteLock readWritelock = new ReentrantReadWriteLock();
 
-    public EndPointsMap() {
+    public StubsMap() {
         this.endPoints = new HashMap<String, EndPoint>();
     }
 
-    public EndPointsMap(HashMap<String, EndPoint> endPoints) {
+    public StubsMap(HashMap<String, EndPoint> endPoints) {
         this.endPoints = endPoints;
     }
 

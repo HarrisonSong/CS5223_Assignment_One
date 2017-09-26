@@ -2,23 +2,23 @@ package Common.Pair;
 import Common.EndPoint;
 import Game.Game;
 
-public class IdEndPointPair extends Pair<String, EndPoint> {
+public class NameEndPointPair extends Pair<String, EndPoint> {
 
-    public IdEndPointPair() {
+    public NameEndPointPair() {
         super();
         this.setA(new String(new char[Game.NAME_LENGTH]));
         this.setB(new EndPoint());
     }
     
-    public IdEndPointPair(String name, EndPoint ed) {
+    public NameEndPointPair(String name, EndPoint ed) {
         super(name, ed);
     }
 
-    public String getId() {
+    public String getName() {
         return getA();
     }
 
-    public void setId(String name) {
+    public void setName(String name) {
         setA(name);
     }
 

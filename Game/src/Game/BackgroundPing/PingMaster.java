@@ -7,7 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 public class PingMaster {
-    private static final int TIMEOUT = 500;
+    private static final int TIMEOUT = 300;
     private InetSocketAddress destination;
 
     public PingMaster(EndPoint endPoint) {
