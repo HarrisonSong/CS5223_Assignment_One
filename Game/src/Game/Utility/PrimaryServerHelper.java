@@ -1,9 +1,9 @@
-package Utility;
+package Game.Utility;
 
 import Common.mazePair;
 import Game.Game;
-import Game.GameGlobalState;
-import Game.GameLocalState;
+import Game.State.GameGlobalState;
+import Game.State.GameLocalState;
 import Game.Player.Player;
 import Game.Player.PlayerType;
 import Interface.GameInterface;

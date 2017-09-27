@@ -1,10 +1,10 @@
-package Utility;
+package Game.Utility;
 
 import Common.NameTypePair;
 import Game.BackgroundPing.PingMaster;
 import Game.Game;
-import Game.GameGlobalState;
-import Game.GameLocalState;
+import Game.State.GameGlobalState;
+import Game.State.GameLocalState;
 import Game.Player.Command;
 import Game.Player.PlayerType;
 import Interface.GameInterface;

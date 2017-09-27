@@ -1,5 +1,5 @@
-package Game;
-import Common.NameStubPair;
+package Game.State;
+import Game.Game;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 import Interface.TrackerInterface;

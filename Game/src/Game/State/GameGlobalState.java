@@ -1,6 +1,7 @@
-package Game;
+package Game.State;
 
 import Common.mazePair;
+import Game.Game;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
