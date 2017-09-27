@@ -1,6 +1,4 @@
-package Common.Pair;
-
-import Game.Game;
+package Common;
 
 public class Pair<T, V> {
 

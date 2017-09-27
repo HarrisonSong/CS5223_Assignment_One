@@ -1,28 +1,23 @@
-package Game;
+package Utility;
 
-import Common.Pair.mazePair;
+import Common.mazePair;
+import Game.Game;
+import Game.GameGlobalState;
+import Game.GameLocalState;
 import Game.Player.Player;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 
-/**
- *
- * PRIMARY SPECIFIC METHODS
- *
- */
-public class PrimaryServerFunctions {
-    PrimaryServerFunctions(){}
+import java.rmi.RemoteException;
 
+public class PrimaryServerHelper {
     /**
      * game setup when first player joins
      * @param playName
      */
-    public static void setupGameAsPrimaryServer(String playName, GameInterface localStub, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
-        gameLocalState.setName(playName);
-        gameLocalState.setPlayerType(PlayerType.Primary);
-        gameLocalState.setLocalStub(localStub);
+    public static void initializeGlobalState(String playName, Game game){
         Player primaryPlayer = new Player(playName, new mazePair(Game.MazeSize), 0, PlayerType.Primary);
-        gameGlobalState.initialize(primaryPlayer);
+        game.getGameGlobalState().initialize(primaryPlayer);
     }
 
     /**
@@ -44,10 +39,20 @@ public class PrimaryServerFunctions {
         }
     }
 
-    private static  void setBackupServer(int playerIndex,GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+    private static void setBackupServer(int playerIndex,GameLocalState gameLocalState, GameGlobalState gameGlobalState){
         if(gameLocalState.getPlayerType() == PlayerType.Standard) {
             gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
             gameLocalState.setBackupStub(gameLocalState.getLocalStub());
+        }
+    }
+
+    public static void updateTrackerStubMap(GameLocalState localState){
+        try {
+            localState.getTrackerStub().resetTrackerStubs(localState.getPlayerStubsMap());
+        } catch (RemoteException | InterruptedException e) {
+            e.printStackTrace();
+            System.err.println("Tracker is offline");
+            System.exit(0);
         }
     }
 }

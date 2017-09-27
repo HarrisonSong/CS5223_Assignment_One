@@ -1,5 +1,5 @@
 package Game.Player;
-import Common.Pair.mazePair;
+import Common.mazePair;
 
 public class Player {
 

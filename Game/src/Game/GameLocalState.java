@@ -1,4 +1,5 @@
 package Game;
+import Common.NameStubPair;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
@@ -12,9 +13,9 @@ public class GameLocalState {
     private String name;
 
     private GameInterface localStub = null;
-    private GameInterface primaryStub= null;
-    private GameInterface backupStub= null;
-    private TrackerInterface trackerStub= null;
+    private GameInterface primaryStub = null;
+    private GameInterface backupStub = null;
+    private TrackerInterface trackerStub = null;
 
     private Map<String, GameInterface> playerStubsMap;
 
@@ -43,24 +44,36 @@ public class GameLocalState {
         return localStub;
     }
 
-    public void setLocalStub(GameInterface localStub) {
-        this.localStub = localStub;
+//    public void setLocalStub(String playerName, GameInterface localStub) {
+//        this.localStub = new NameStubPair(playerName, localStub);
+//    }
+
+    public void setLocalStub(GameInterface stub){
+        this.localStub = stub;
     }
 
     public GameInterface getPrimaryStub() {
         return primaryStub;
     }
 
-    public void setPrimaryStub(GameInterface primaryStub) {
-        this.primaryStub = primaryStub;
+//    public void setPrimaryStub(String playerName, GameInterface primaryStub) {
+//        this.primaryStub = new NameStubPair(playerName, primaryStub);
+//    }
+
+    public void setPrimaryStub(GameInterface stub){
+        this.primaryStub = stub;
     }
 
     public GameInterface getBackupStub() {
         return backupStub;
     }
 
-    public void setBackupStub(GameInterface backupStub) {
-        this.backupStub = backupStub;
+//    public void setBackupStub(String playerName, GameInterface backupStub) {
+//        this.backupStub = new NameStubPair(playerName, backupStub);
+//    }
+
+    public void setBackupStub(GameInterface stub){
+        this.backupStub = stub;
     }
 
     public TrackerInterface getTrackerStub() {
@@ -75,10 +88,10 @@ public class GameLocalState {
         return playerStubsMap;
     }
 
-    public String getPlayerByStub(GameInterface targetStub) {
-        for(Map.Entry<String, GameInterface> Stub : this.playerStubsMap.entrySet()){
-            if(Stub.equals(targetStub)){
-                return Stub.getKey();
+    public String getPlayerNameByStub(GameInterface targetStub) {
+        for(Map.Entry<String, GameInterface> stub : this.playerStubsMap.entrySet()){
+            if(stub.getValue().equals(targetStub)){
+                return stub.getKey();
             }
         }
         return "";
@@ -92,7 +105,7 @@ public class GameLocalState {
         this.playerStubsMap.put(playName, Stub);
     }
 
-    public void removePlayerStub(String playName){
+    public void removePlayerStubByName(String playName){
         this.playerStubsMap.remove(playName);
     }
 }

@@ -1,16 +1,13 @@
 package Game;
 
-import Common.*;
-import Common.Pair.NameEndPointPair;
-import Common.Pair.NameTypePair;
-import Common.Pair.mazePair;
-import Game.BackgroundPing.EndPointsLiveChecker;
-import Game.BackgroundPing.SingleEndPointLiveChecker;
+import Game.BackgroundPing.MultipleTargetsLiveChecker;
+import Game.BackgroundPing.SingleTargetLiveChecker;
 import Game.Player.Command;
-import Game.Player.Player;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
+import Utility.PlayerHelper;
+import Utility.PrimaryServerHelper;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -28,15 +25,10 @@ public class Game implements GameInterface {
     /**
      * static game global constants
      */
-    public static final int NAME_LENGTH = 2;
     public static final int DEFAULT_PLAYER_ACCESS_PORT = 8888;
 
     public static int MazeSize;
     public static int TreasureSize;
-
-//    private TrackerInterface tracker;
-//    private GameInterface primaryServer;
-//    private GameInterface backupServer;
 
     private ScheduledExecutorService scheduler;
     private ScheduledFuture backgroundScheduledTask;
@@ -64,7 +56,7 @@ public class Game implements GameInterface {
 
         String trackerIP = "";
         int trackerPort = 0;
-        String playName = "";
+        String playerName = "";
 
         if (args.length < 3) {
             System.err.println("Not enough parameters.");
@@ -74,7 +66,7 @@ public class Game implements GameInterface {
 
         if (args.length == 3) {
             trackerIP = args[0];
-            playName = args[2];
+            playerName = args[2];
             try {
                 trackerPort = Integer.parseInt(args[1]);
             } catch (NumberFormatException e) {
@@ -84,10 +76,9 @@ public class Game implements GameInterface {
             }
         }
 
-
-        String localIP = EndPoint.getLocalIP();
         Registry trackerRegistry;
         Game game = new Game();
+        game.gameLocalState.setName(playerName);
 
         /**
          * Setup security manager
@@ -101,212 +92,203 @@ public class Game implements GameInterface {
          */
         try {
             trackerRegistry = LocateRegistry.getRegistry(trackerIP, trackerPort);
-            game.tracker = (TrackerInterface) trackerRegistry.lookup("Tracker");
+            game.gameLocalState.setTrackerStub((TrackerInterface) trackerRegistry.lookup("Tracker"));
         } catch (RemoteException | NotBoundException e) {
-            e.printStackTrace();
             System.err.println("Failed to locate Tracker");
             System.exit(0);
         }
 
+        /**
+         * Setup local stub and exit when fail.
+         */
         try {
-            if (game.tracker.registerNewPlayer(localIP, DEFAULT_PLAYER_ACCESS_PORT, playName, (GameInterface) UnicastRemoteObject.exportObject(game, Game.DEFAULT_PLAYER_ACCESS_PORT))) {
-
-                /**
-                 * Initialize and collect necessary parameters from tracker
-                 */
-                MazeSize = game.tracker.getN();
-                TreasureSize = game.tracker.getK();
-                Map playerEndPoints = game.tracker.retrieveEndPointsMap();
-                game.gameLocalState.setPlayerEndPointsMap(playerEndPoints);
-
-                switch (playerEndPoints.size()) {
-                    case 1: {
-                        game.setupGameAsPrimaryServer(playName, localIP);
-                        /**
-                         * Setup periodic ping to each player
-                         */
-                        game.scheduler = Executors.newScheduledThreadPool(0);
-                        game.backgroundScheduledTask = game.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(game.retrieveEnhancedEndPointsMap(), (name) -> game.handleStandardPlayerUnavailability(name), () -> game.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-
-                        break;
-                    } // End of Case 1
-                    default: {
-                        /**
-                         *  Check primary
-                         */
-
-                        boolean PrimaryIsAlive = true;
-                        GameInterface t_primary = null;
-
-                        /**
-                         *  Go trough PlayerEndPoint List to find one alive, and contact Primary successfully.
-                         */
-                        for (Map.Entry<String, EndPoint> entry : game.gameLocalState.getPlayerEndPointsMap().entrySet()) {
-                            String key = entry.getKey();
-                            EndPoint value = entry.getValue();
-
-                            if (key == playName)
-                                continue;
-
-                            GameInterface t_Alive = game.contactGameEndPoint(new NameEndPointPair(key, value));
-
-                            if (t_Alive != null) {
-                                List<NameEndPointPair> BPList = null;
-                                try {
-                                    BPList = t_Alive.getPrimaryAndBackupStubs();
-                                } catch (RemoteException e) {
-                                    continue;
-                                }
-
-                                t_primary = game.contactGameEndPoint(BPList.get(0));
-                                if (t_primary != null) {
-                                    try {
-                                        game.gameGlobalState = t_primary.primaryExecuteJoin(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
-
-                                        String primID = game.gameGlobalState.getIdByType(PlayerType.Primary);
-                                        String backID = game.gameGlobalState.getIdByType(PlayerType.Backup);
-
-                                        EndPoint temp_p = game.gameLocalState.getPlayerEndPointsMap().get(primID);
-                                        EndPoint temp_b = game.gameLocalState.getPlayerEndPointsMap().get(backID);
-
-                                        game.gameLocalState.setBackupEndPoint(new NameEndPointPair(backID, temp_b));
-                                        game.gameLocalState.setPrimaryEndPoint(new NameEndPointPair(primID, temp_p));
-
-                                        if (backID == playName) {
-                                            game.setupGame(playName, localIP, PlayerType.Backup);
-                                        } else {
-                                            game.setupGame(playName, localIP, PlayerType.Standard);
-                                        }
-
-
-                                    } catch (RemoteException e) {
-                                        // No backup
-                                        if (BPList.get(1) == null) {
-                                            PrimaryIsAlive = false;
-                                            break;
-                                        }
-
-                                        // Wait for backup to become Primary
-                                        TimeUnit.MILLISECONDS.sleep(1300);
-
-                                        t_primary = game.contactGameEndPoint(BPList.get(1));
-
-                                        game.gameGlobalState = t_primary.primaryExecuteJoin(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
-
-                                        String primID = game.gameGlobalState.getIdByType(PlayerType.Primary);
-                                        String backID = game.gameGlobalState.getIdByType(PlayerType.Backup);
-
-                                        EndPoint temp_p = game.gameLocalState.getPlayerEndPointsMap().get(primID);
-                                        EndPoint temp_b = game.gameLocalState.getPlayerEndPointsMap().get(backID);
-
-                                        game.gameLocalState.setBackupEndPoint(new NameEndPointPair(backID, temp_b));
-                                        game.gameLocalState.setPrimaryEndPoint(new NameEndPointPair(primID, temp_p));
-
-                                        if (backID == playName) {
-                                            game.setupGame(playName, localIP, PlayerType.Backup);
-                                        } else {
-                                            game.setupGame(playName, localIP, PlayerType.Standard);
-                                        }
-                                    }
-
-                                } else {
-
-                                    // No backup
-                                    if (BPList.get(1) == null) {
-                                        PrimaryIsAlive = false;
-                                        break;
-                                    }
-
-                                    // Wait for backup to become Primary
-                                    TimeUnit.MILLISECONDS.sleep(1300);
-
-                                    t_primary = game.contactGameEndPoint(BPList.get(1));
-
-                                    game.gameGlobalState = t_primary.primaryExecuteJoin(new EndPoint(localIP, DEFAULT_PLAYER_ACCESS_PORT), playName);
-
-                                    String primID = game.gameGlobalState.getIdByType(PlayerType.Primary);
-                                    String backID = game.gameGlobalState.getIdByType(PlayerType.Backup);
-
-                                    EndPoint temp_p = game.gameLocalState.getPlayerEndPointsMap().get(primID);
-                                    EndPoint temp_b = game.gameLocalState.getPlayerEndPointsMap().get(backID);
-
-                                    game.gameLocalState.setBackupEndPoint(new NameEndPointPair(backID, temp_b));
-                                    game.gameLocalState.setPrimaryEndPoint(new NameEndPointPair(primID, temp_p));
-
-                                    if (backID == playName) {
-                                        game.setupGame(playName, localIP, PlayerType.Backup);
-                                    } else {
-                                        game.setupGame(playName, localIP, PlayerType.Standard);
-                                    }
-
-                                }
-
-                            } else {
-                                continue;
-                            }
-
-                        }
-
-
-                        /**
-                         *  If there is Primary Alive
-                         */
-                        if (!PrimaryIsAlive) {
-
-                            /**
-                             * Set up as primary
-                             */
-                            game.setupGameAsPrimaryServer(playName, localIP);
-                            /**
-                             * Setup periodic ping to each player
-                             */
-                            game.scheduler = Executors.newScheduledThreadPool(0);
-                            game.backgroundScheduledTask = game.scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(game.gameLocalState.getPrimaryEndPoint().getEndPoint(), () -> game.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-                        }
-                        break;
-                    } // End of Default
-
-                } // End of Switch
-
-                /**
-                 * Continuously read user input from
-                 * standard input.
-                 */
-                Scanner inputScanner = new Scanner(System.in);
-                while (inputScanner.hasNext()) {
-                    game.issueRequest(inputScanner.nextLine());
-                }
-            } else {
-                System.err.println("Failed to register.");
-                System.exit(0);
-                return;
-            }
-        } catch (RemoteException | InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("Failed to contact Tracker");
+            game.gameLocalState.setLocalStub((GameInterface) UnicastRemoteObject.exportObject(game, Game.DEFAULT_PLAYER_ACCESS_PORT));
+        } catch (RemoteException e) {
+            System.err.println("Failed to setup local stub");
             System.exit(0);
+        }
+
+        Map playerStubsMap = null;
+        boolean isRegistered = false;
+        try {
+            MazeSize = game.gameLocalState.getTrackerStub().getN();
+            TreasureSize = game.gameLocalState.getTrackerStub().getK();
+            playerStubsMap = game.gameLocalState.getTrackerStub().serveStubs();
+            isRegistered = game.gameLocalState.getTrackerStub().registerNewPlayer(playerName, game.gameLocalState.getLocalStub());
+        } catch (RemoteException | InterruptedException e) {
+            System.err.println("Failed to contact Tracker");
+            System.exit(0);
+        }
+        if(isRegistered){
+
+            /**
+             * Initialize and collect necessary parameters from tracker
+             */
+
+            game.gameLocalState.setPlayerStubsMap(playerStubsMap);
+
+            switch (playerStubsMap.size()) {
+                case 1: {
+                    if(game.setupPrimary(true)){
+                        PrimaryServerHelper.initializeGlobalState(playerName, game);
+                    }else{
+                        System.err.println("Failed to setup primary");
+                        System.exit(0);
+                    }
+                    break;
+                }
+                default: {
+                    boolean isPrimaryAlive = false;
+
+                    for(Map.Entry<String, GameInterface> stubEntry : game.getGameLocalState().getPlayerStubsMap().entrySet()){
+
+                        if(playerName.equals(stubEntry.getKey())){
+                            continue;
+                        }
+
+                        List<GameInterface> primaryAndBackupStubs;
+                        try {
+                            primaryAndBackupStubs = stubEntry.getValue().getPrimaryAndBackupStubs();
+                        } catch(RemoteException e) {
+                            /**
+                             * The player is offline.
+                             */
+                            continue;
+                        }
+
+                        /**
+                         * Primary server is confirmed to be alive
+                         * by the time. Assign the stub.
+                         */
+                        game.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
+                        game.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
+                        boolean isBackupAvailable = primaryAndBackupStubs.get(1) != null;
+                        GameGlobalState updatedState = null;
+                        try{
+                            updatedState = (GameGlobalState) game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                        } catch (RemoteException e){
+                            /**
+                             * The primary server is offline at the time.
+                             */
+                            if(isBackupAvailable){
+                                game.gameLocalState.setPrimaryStub(game.gameLocalState.getBackupStub());
+                                try {
+                                    TimeUnit.MILLISECONDS.sleep(1300);
+                                    game.getGameLocalState().getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                                    List<GameInterface> updatedPrimaryAndBackupStubs = game.getGameLocalState().getPrimaryStub().getPrimaryAndBackupStubs();
+                                    game.getGameLocalState().setPrimaryStub(updatedPrimaryAndBackupStubs.get(0));
+                                    game.getGameLocalState().setBackupStub(updatedPrimaryAndBackupStubs.get(1));
+                                    isBackupAvailable = updatedPrimaryAndBackupStubs.get(1) == null;
+                                } catch (Exception e1) {
+                                    System.err.println("Failed to contact both primary server and backup server.");
+                                    System.exit(0);
+                                }
+                            }else{
+                                break;
+                            }
+                        }
+                        if(!isBackupAvailable){
+                            if(!game.setupBackup(updatedState)){
+                                System.err.println("Failed to setup backup");
+                                System.exit(0);
+                            }
+                        }
+
+                        isPrimaryAlive = true;
+                        break;
+                    }
+
+                    if(!isPrimaryAlive){
+                        if(game.setupPrimary(true)){
+                            PrimaryServerHelper.initializeGlobalState(playerName, game);
+                        }else{
+                            System.err.println("Failed to setup primary");
+                            System.exit(0);
+                        }
+                    }
+                    break;
+                }
+            }
+
+            /**
+             * Continuously read user input from
+             * standard input.
+             */
+            Scanner inputScanner = new Scanner(System.in);
+            while (inputScanner.hasNext()) {
+                PlayerHelper.issueRequest(inputScanner.nextLine(), game);
+            }
+        } else {
+            System.err.println("Failed to register.");
+            System.exit(0);
+            return;
         }
     }
 
+    public boolean setupPrimary(boolean isTheOnlyPlayer){
+        if (PlayerHelper.setupSelfAsPrimary(this, isTheOnlyPlayer)){
+            /**
+             * Setup periodic ping to each player
+             */
+            this.scheduler = Executors.newScheduledThreadPool(0);
+            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
+                    new MultipleTargetsLiveChecker(
+                            PlayerHelper.retrieveEnhancedStubsMap(this.gameLocalState),
+                            (name) -> this.handleStandardPlayerUnavailability(name),
+                            () -> this.handleBackupServerUnavailability()
+                    ),
+                    500, 500, TimeUnit.MILLISECONDS
+            );
+            return true;
+        }
+        return false;
+    }
 
-    //region GameInterface Functions
+    public boolean setupBackup(GameGlobalState updatedState){
+        PlayerHelper.setupSelfAsBackup(this, updatedState);
+        this.scheduler = Executors.newScheduledThreadPool(0);
+
+        /**
+         * Setup periodic ping to primary server
+         */
+        this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
+                new SingleTargetLiveChecker(
+                        this.gameLocalState.getPrimaryStub(),
+                        () -> this.handlePrimaryServerUnavailability()
+                ),
+                500, 500, TimeUnit.MILLISECONDS
+        );
+        return true;
+    }
+
+    /*** GameInterface Implementation ***/
+
     /**
      * read and process the player requests
      * @param playerName
      * @param request
      * @return updated global game state
      */
-    public Object primaryExecuteRemoteRequest(String name, String command){
-        if(request.equals(Command.Exit)){
-            this.gameLocalState.removePlayerEndPoint(playerName);
+    public Object primaryExecuteRemoteRequest(String playerName, String request){
+        Command command;
+        try{
+            command = Command.valueOf(request);
+        }catch (Exception e){
+            command = Command.Invalid;
+        }
+        if(command.equals(Command.Exit)){
+            this.gameLocalState.removePlayerStubByName(playerName);
             this.gameGlobalState.removePlayerByName(playerName);
         }
-        if(request.equals(Command.East) || request.equals(Command.West) ||
-                request.equals(Command.South) || request.equals(Command.North)){
-            this.gameGlobalState.makeMove(request, playerName);
+        if(command.equals(Command.East) || command.equals(Command.West) ||
+                command.equals(Command.South) || command.equals(Command.North)){
+            this.gameGlobalState.makeMove(command, playerName);
         }
         try {
-            backupServer.backupUpdateGameState(this.gameGlobalState);
+            /**
+             * Remote call backup server to update its global state
+             */
+            this.gameLocalState.getBackupStub().backupUpdateGameState(this.gameGlobalState);
         } catch (RemoteException e) {
             e.printStackTrace();
         }
@@ -315,32 +297,22 @@ public class Game implements GameInterface {
 
     /**
      * handler to manage new player joining
-     * @param IPAddress
-     * @param playName
+     * @param playerName
+     * @param stub
      * @return updated global game state
      */
-    public Object primaryExecuteJoin(GameInterface stub, String name){
-        if(this.gameLocalState.getPlayerEndPointsMap().size() == 1){
-            this.gameLocalState.setBackupEndPoint(new NameEndPointPair(playName, IPAddress));
-            this.gameGlobalState.addNewPlayerByName(playName, PlayerType.Backup);
-            this.gameLocalState.addPlayerEndPoint(playName, IPAddress);
+    public Object primaryExecuteJoin(String playerName, GameInterface stub){
+        if(this.gameLocalState.getPlayerStubsMap().size() == 1){
+            this.gameGlobalState.addNewPlayerByName(playerName, PlayerType.Backup);
 
             /**
-             * setup RMI connection to backup server
+             * setup the stub to be backup server
              */
-            try {
-                Registry backupRegistry = LocateRegistry.getRegistry(gameLocalState.getBackupEndPoint().getEndPoint().getIPAddress(), gameLocalState.getBackupEndPoint().getEndPoint().getPort());
-                String backupPlayerName = gameLocalState.getBackupEndPoint().getName();
-                backupServer = (GameInterface) backupRegistry.lookup("Player_" + backupPlayerName);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            } catch (NotBoundException e) {
-                e.printStackTrace();
-            }
+            this.gameLocalState.setBackupStub(stub);
         }else{
-            this.gameGlobalState.addNewPlayerByName(playName, PlayerType.Standard);
-            this.gameLocalState.addPlayerEndPoint(playName, IPAddress);
+            this.gameGlobalState.addNewPlayerByName(playerName, PlayerType.Standard);
         }
+        this.gameLocalState.addPlayerStub(playerName, stub);
         return this.gameGlobalState;
     }
 
@@ -352,7 +324,7 @@ public class Game implements GameInterface {
      */
     public boolean backupUpdateGameState(Object gameState){
         if(this.gameLocalState.getPlayerType() == PlayerType.Backup){
-            this.updateGameGlobalState(gameState);
+            PlayerHelper.updateGameGlobalState(this.gameGlobalState, (GameGlobalState) gameState);
         }
         return false;
     }
@@ -361,128 +333,54 @@ public class Game implements GameInterface {
      * Get primary and backup server endPoints
      * @return
      */
-    public List<NameEndPointPair> getPrimaryAndBackupStubs(){
-        List<NameEndPointPair> result = new ArrayList<>();
-        result.add(this.gameLocalState.getPrimaryEndPoint());
-        result.add(this.gameLocalState.getBackupEndPoint());
+    public List<GameInterface> getPrimaryAndBackupStubs(){
+        List<GameInterface> result = new ArrayList<>();
+        result.add(this.gameLocalState.getPrimaryStub());
+        result.add(this.gameLocalState.getBackupStub());
         return result;
     }
 
     /**
-     * promote current game to be backup server
-     * @param gameState: updated global game state from primary server
-     * @return promotion status
+     * Notify caller that current player is alive.
+     * @return player alive status
      */
-    public boolean playerPromoteAsBackup(Object gameState) {
-        if(this.gameLocalState.getPlayerType() == PlayerType.Standard){
-            this.gameLocalState.setPlayerType(PlayerType.Backup);
-            this.gameLocalState.setBackupEndPoint(this.gameLocalState.getLocalEndPoint());
-            this.updateGameGlobalState(gameState);
-            ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-            scheduler.scheduleAtFixedRate(new SingleEndPointLiveChecker(this.gameLocalState.getPrimaryEndPoint().getEndPoint(), () -> this.handlePrimaryServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-            return true;
-        }
-        return false;
+    public boolean isAlive(){
+        return true;
     }
-    //endregion
 
-    //region Unavailability function calls
-    public void handleStandardPlayerUnavailability(String playerName){
-        this.gameLocalState.removePlayerStub(playerName);
-        this.gameGlobalState.removePlayerByName(playerName);
+    /*** End of GameInterface Implementation ***/
+
+    /** Unavailability handlers **/
+
+    public void handlePrimaryServerUnavailability(){
+        String primaryPlayerName = this.gameLocalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
+        this.gameLocalState.removePlayerStubByName(primaryPlayerName);
+        this.gameGlobalState.removePlayerByName(primaryPlayerName);
+        this.setupPrimary((this.gameLocalState.getPlayerStubsMap().size() == 1));
+        PrimaryServerHelper.updateTrackerStubMap(this.gameLocalState);
     }
 
     public void handleBackupServerUnavailability(){
-        String backupPlayerName = this.gameLocalState.getPlayerByStub(this.gameLocalState.getBackupStub());
-        this.gameLocalState.removePlayerStub(backupPlayerName);
+        String backupPlayerName = this.gameLocalState.getPlayerNameByStub(this.gameLocalState.getBackupStub());
+        this.gameLocalState.removePlayerStubByName(backupPlayerName);
         this.gameGlobalState.removePlayerByName(backupPlayerName);
-        PrimaryServerFunctions.assignBackupServer(this.gameLocalState, this.gameGlobalState);
-        try {
-            //tracker.resetTrackerEndPointsMap(this.gameLocalState.getPlayerEndPointsMap());
-            this.gameLocalState.getTrackerStub().resetTrackerStubs(this.gameLocalState.getPlayerStubsMap());
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        PrimaryServerHelper.assignBackupServer(this.gameLocalState, this.gameGlobalState);
+        PrimaryServerHelper.updateTrackerStubMap(this.gameLocalState);
     }
 
-    public void handlePrimaryServerUnavailability(){
-        String primaryPlayerName = this.gameLocalState.getPlayerByStub(this.gameLocalState.getPrimaryStub());
-        this.gameLocalState.removePlayerStub(primaryPlayerName);
-        this.gameGlobalState.removePlayerByName(primaryPlayerName);
-        if(PlayerFunctions.promoteToBePrimary((this.gameLocalState.getPlayerStubsMap().size() == 1), this.gameLocalState,this.gameGlobalState)){
-            /**
-             * Reschedule the background ping task
-             */
-            this.backgroundScheduledTask.cancel(true);
-            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(new EndPointsLiveChecker(PlayerFunctions.retrieveEnhancedEndPointsMap(this.gameLocalState), (name) -> this.handleStandardPlayerUnavailability(name), () -> this.handleBackupServerUnavailability()), 500, 500, TimeUnit.MILLISECONDS);
-
-        }
-        try {
-            this.gameLocalState.getTrackerStub().resetTrackerStubs(this.gameLocalState.getPlayerStubsMap());
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-    //endregion
-
-    /**
-     * Update game global state according to primary
-     * server response
-     * @param gameState
-     */
-    private void updateGameGlobalState(GameGlobalState gameState){
-        this.gameGlobalState.setPlayerList(gameState.getPlayerList());
-        this.gameGlobalState.setTreasureLocation(gameState.getTreasureLocation());
+    public void handleStandardPlayerUnavailability(String playerName){
+        this.gameLocalState.removePlayerStubByName(playerName);
+        this.gameGlobalState.removePlayerByName(playerName);
     }
 
-    /**
-     * categorize player requests
-     * @param request
-     * @return classified command
-     */
-//    private Command classifyPlayerInput(String request){
-//        Command result = Command.Invalid;
-//        switch (request){
-//            case "0":
-//                result = Command.Refresh;
-//                break;
-//            case "1":
-//                result = Command.West;
-//                break;
-//            case "2":
-//                result = Command.South;
-//                break;
-//            case "3":
-//                result = Command.East;
-//                break;
-//            case "4":
-//                result = Command.North;
-//                break;
-//            case "9":
-//                result = Command.Exit;
-//                break;
-//            default: break;
-//        }
-//        return result;
-//    }
-//
-//    private GameInterface contactGameEndPoint(NameEndPointPair pair){
-//        try {
-//            Registry backupRegistry = LocateRegistry.getRegistry(pair.getEndPoint().getIPAddress(), pair.getEndPoint().getPort());
-//            try {
-//                GameInterface targetPlayer = (GameInterface)backupRegistry.lookup("Player_" + pair.getName());
-//                return targetPlayer;
-//            } catch (NotBoundException notBoundException) {
-//                notBoundException.printStackTrace();
-//                return null;
-//            }
-//        } catch (RemoteException remoteException) {
-//            remoteException.printStackTrace();
-//            return null;
-//        }
-//    }
+    /** End of Unavailability handlers **/
+
+    /***Getters and Setters ***/
+    public GameGlobalState getGameGlobalState() {
+        return gameGlobalState;
+    }
+
+    public GameLocalState getGameLocalState() {
+        return gameLocalState;
+    }
 }

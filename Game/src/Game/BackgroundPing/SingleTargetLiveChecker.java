@@ -1,20 +1,20 @@
 package Game.BackgroundPing;
 
-import Common.EndPoint;
+import Interface.GameInterface;
 
-public class SingleEndPointLiveChecker implements Runnable {
+public class SingleTargetLiveChecker implements Runnable {
 
-    private EndPoint endPoint;
+    private GameInterface playerStub;
     private PrimaryHandlerInterface unavailableHandler;
 
-    public SingleEndPointLiveChecker(EndPoint endPoint, PrimaryHandlerInterface handler) {
-        this.endPoint = endPoint;
+    public SingleTargetLiveChecker(GameInterface playerStub, PrimaryHandlerInterface handler) {
+        this.playerStub = playerStub;
         this.unavailableHandler = handler;
     }
 
     @Override
     public void run() {
-        PingMaster pingMaster = new PingMaster(this.endPoint);
+        PingMaster pingMaster = new PingMaster(this.playerStub);
         if(!pingMaster.isReachable()){
             try {
                 this.unavailableHandler.handlePrimaryUnavailability();

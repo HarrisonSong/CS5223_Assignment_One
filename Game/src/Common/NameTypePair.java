@@ -1,4 +1,4 @@
-package Common.Pair;
+package Common;
 
 import Game.Player.PlayerType;
 
