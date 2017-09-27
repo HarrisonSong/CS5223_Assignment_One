@@ -15,7 +15,7 @@ public class GameGlobalState {
     private List<mazePair> treasureLocation = new ArrayList<mazePair>(Game.TreasureSize);
     private Stack<Integer> activePlayerQueue = new Stack<>();
 
-    public void initialize(Player firstPlayer) {
+    public void initialize(Player firstPlayer){
         for(int i=0; i < Game.TreasureSize; i++) {
             treasureLocation.add(new mazePair(Game.MazeSize));
         }

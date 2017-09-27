@@ -16,8 +16,8 @@ public class PrimaryServerHelper {
      * @param playName
      */
     public static void initializeGlobalState(String playName, Game game){
-        Player primaryPlayer = new Player(playName, new mazePair(Game.MazeSize), 0, PlayerType.Primary);
-        game.getGameGlobalState().initialize(primaryPlayer);
+        Player firstPlayer = new Player(playName, new mazePair(Game.MazeSize), 0, PlayerType.Standard);
+        game.getGameGlobalState().initialize(firstPlayer);
     }
 
     /**

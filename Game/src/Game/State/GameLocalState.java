@@ -1,5 +1,4 @@
 package Game.State;
-import Game.Game;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
@@ -44,10 +43,6 @@ public class GameLocalState {
         return localStub;
     }
 
-//    public void setLocalStub(String playerName, GameInterface localStub) {
-//        this.localStub = new NameStubPair(playerName, localStub);
-//    }
-
     public void setLocalStub(GameInterface stub){
         this.localStub = stub;
     }
@@ -56,10 +51,6 @@ public class GameLocalState {
         return primaryStub;
     }
 
-//    public void setPrimaryStub(String playerName, GameInterface primaryStub) {
-//        this.primaryStub = new NameStubPair(playerName, primaryStub);
-//    }
-
     public void setPrimaryStub(GameInterface stub){
         this.primaryStub = stub;
     }
@@ -67,10 +58,6 @@ public class GameLocalState {
     public GameInterface getBackupStub() {
         return backupStub;
     }
-
-//    public void setBackupStub(String playerName, GameInterface backupStub) {
-//        this.backupStub = new NameStubPair(playerName, backupStub);
-//    }
 
     public void setBackupStub(GameInterface stub){
         this.backupStub = stub;

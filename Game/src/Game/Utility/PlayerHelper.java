@@ -32,11 +32,9 @@ public class PlayerHelper {
             /**
              * Update game global state
              */
-            if (!isTheOnlyPlayer) {
-                game.getGameGlobalState().getPlayerList().get(
-                        game.getGameGlobalState().getIndexOfPlayerByName(game.getGameLocalState().getName())
-                ).setType(PlayerType.Primary);
-            }
+            game.getGameGlobalState().getPlayerList().get(
+                    game.getGameGlobalState().getIndexOfPlayerByName(game.getGameLocalState().getName())
+            ).setType(PlayerType.Primary);
             return true;
         }
         return false;

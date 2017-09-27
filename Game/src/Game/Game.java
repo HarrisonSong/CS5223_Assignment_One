@@ -131,9 +131,8 @@ public class Game implements GameInterface {
 
             switch (playerStubsMap.size()) {
                 case 1: {
-                    if(game.setupPrimary(true)){
-                        PrimaryServerHelper.initializeGlobalState(playerName, game);
-                    }else{
+                    PrimaryServerHelper.initializeGlobalState(playerName, game);
+                    if(!game.setupPrimary(true)){
                         System.err.println("Failed to setup primary");
                         System.exit(0);
                     }
@@ -201,9 +200,8 @@ public class Game implements GameInterface {
                     }
 
                     if(!isPrimaryAlive){
-                        if(game.setupPrimary(true)){
-                            PrimaryServerHelper.initializeGlobalState(playerName, game);
-                        }else{
+                        PrimaryServerHelper.initializeGlobalState(playerName, game);
+                        if(!game.setupPrimary(true)){
                             System.err.println("Failed to setup primary");
                             System.exit(0);
                         }
@@ -232,7 +230,12 @@ public class Game implements GameInterface {
             /**
              * Setup periodic ping to each player
              */
-            this.scheduler = Executors.newScheduledThreadPool(0);
+            if(this.scheduler == null) {
+                this.scheduler = Executors.newScheduledThreadPool(0);
+            }
+            if(this.backgroundScheduledTask != null) {
+                this.backgroundScheduledTask.cancel(true);
+            }
             this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
                     new MultipleTargetsLiveChecker(
                             PlayerHelper.retrieveEnhancedStubsMap(this.gameLocalState),
