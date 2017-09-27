@@ -113,8 +113,8 @@ public class Game implements GameInterface {
         try {
             MazeSize = game.gameLocalState.getTrackerStub().getN();
             TreasureSize = game.gameLocalState.getTrackerStub().getK();
-            playerStubsMap = game.gameLocalState.getTrackerStub().serveStubs();
             isRegistered = game.gameLocalState.getTrackerStub().registerNewPlayer(playerName, game.gameLocalState.getLocalStub());
+            playerStubsMap = game.gameLocalState.getTrackerStub().serveStubs();
         } catch (RemoteException | InterruptedException e) {
             System.err.println("Failed to contact Tracker");
             System.exit(0);
