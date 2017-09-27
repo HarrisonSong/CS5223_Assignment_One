@@ -17,4 +17,13 @@ public enum Command {
     public String getValue() {
         return value;
     }
+
+    public static Command fromString(String text) {
+        for (Command b : Command.values()) {
+            if (b.value.equalsIgnoreCase(text)) {
+                return b;
+            }
+        }
+        return Invalid;
+    }
 }

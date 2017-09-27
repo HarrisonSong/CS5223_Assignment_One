@@ -272,7 +272,7 @@ public class Game implements GameInterface {
     public Object primaryExecuteRemoteRequest(String playerName, String request){
         Command command;
         try{
-            command = Command.valueOf(request);
+            command = Command.fromString(request);
         }catch (Exception e){
             command = Command.Invalid;
         }

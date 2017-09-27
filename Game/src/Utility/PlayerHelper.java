@@ -65,14 +65,14 @@ public class PlayerHelper {
     public static void issueRequest(String request, Game game){
         Command playerCommand;
         try{
-            playerCommand = Command.valueOf(request);
+            playerCommand = Command.fromString(request);
         }catch (Exception e){
             playerCommand = Command.Invalid;
         }
         if(!playerCommand.equals(Command.Invalid)){
             try {
-
-                game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
+                GameInterface p = game.getGameLocalState().getPrimaryStub();
+                p.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
             } catch (RemoteException e) {
 
                 /**
