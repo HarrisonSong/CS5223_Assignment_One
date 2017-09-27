@@ -4,10 +4,12 @@ import Game.BackgroundPing.MultipleTargetsLiveChecker;
 import Game.BackgroundPing.SingleTargetLiveChecker;
 import Game.Player.Command;
 import Game.Player.PlayerType;
+import Game.State.GameGlobalState;
+import Game.State.GameLocalState;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
-import Utility.PlayerHelper;
-import Utility.PrimaryServerHelper;
+import Game.Utility.PlayerHelper;
+import Game.Utility.PrimaryServerHelper;
 
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
