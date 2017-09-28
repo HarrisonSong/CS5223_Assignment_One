@@ -59,6 +59,28 @@ public class PlayerHelper {
     }
 
     /**
+     * Player set up as a standard player
+     * @param game
+     * @param gameGlobalState: updated global game state from primary server
+     * @return promotion status
+     */
+    public static boolean setupSelfAsStandard(Game game, GameGlobalState gameGlobalState) {
+        //if(game.getGameLocalState().getPlayerType() == PlayerType.Standard){
+        game.getGameLocalState().setPlayerType(PlayerType.Standard);
+        //game.getGameLocalState().setBackupStub(game.getGameLocalState().getLocalStub());
+        game.getGameGlobalState().resetAllStates(
+                gameGlobalState.getPlayersMap(),
+                gameGlobalState.getTreasuresLocation(),
+                gameGlobalState.getActivePlayerQueue()
+        );
+            return true;
+        //}
+        //return false;
+    }
+
+
+
+    /**
      * Method for player to issue the user operation
      * @param request
      */
@@ -72,7 +94,12 @@ public class PlayerHelper {
         }
         if(!playerCommand.equals(Command.Invalid)){
             try {
-                game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
+                if (game.getGameLocalState().getPlayerType() == PlayerType.Primary)
+                {
+                    game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
+                } else {
+                    game.setGameGlobalState((GameGlobalState) game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request));
+                }
             } catch (RemoteException e) {
 
                 /**
@@ -116,5 +143,6 @@ public class PlayerHelper {
     public static boolean isTargetAlive(GameInterface stub){
         return new PingMaster(stub).isReachable();
     }
+
 
 }

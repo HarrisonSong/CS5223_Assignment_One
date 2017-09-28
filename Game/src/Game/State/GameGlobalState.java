@@ -122,7 +122,7 @@ public class GameGlobalState implements Serializable {
 
     public boolean addNewPlayerWithName(String playerName, PlayerType type){
         this.playersMapLock.writeLock().lock();
-        if(!this.playersMap.containsKey(playerName)) return false;
+        if(this.playersMap.containsKey(playerName)) return false;
         try {
             for(int i = 0; i < LocationExplorerAttemptTime; i++) {
                 mazePair newLocation = new mazePair(this.mazeSize);

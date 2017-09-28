@@ -190,6 +190,28 @@ public class Game implements GameInterface {
                         GameGlobalState updatedState = null;
                         try{
                             updatedState = (GameGlobalState) game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                            /**
+                             * The primary server is online, and join successfully
+                             * 1> Update primary and backup stub
+                             * 2> Set up using returned Global state
+                             */
+                            List<GameInterface> updatedPrimaryAndBackupStubs = game.getGameLocalState().getPrimaryStub().getPrimaryAndBackupStubs();
+                            game.getGameLocalState().setPrimaryStub(updatedPrimaryAndBackupStubs.get(0));
+                            game.getGameLocalState().setBackupStub(updatedPrimaryAndBackupStubs.get(1));
+
+                            if (game.getGameLocalState().getLocalStub() == game.getGameLocalState().getBackupStub())
+                            {
+                                if(!game.setupBackup(updatedState)){
+                                    System.err.println("Failed to setup backup");
+                                    System.exit(0);
+                                }
+                            } else {
+                                if(!game.setupStandard(updatedState)) {
+                                    System.err.println("Failed to setup backup");
+                                    System.exit(0);
+                                }
+                            }
+
                         } catch (RemoteException e){
                             /**
                              * The primary server is offline at the time.
@@ -287,6 +309,15 @@ public class Game implements GameInterface {
                 ),
                 500, 500, TimeUnit.MILLISECONDS
         );
+        return true;
+    }
+
+    public boolean setupStandard(GameGlobalState updatedState){
+        PlayerHelper.setupSelfAsStandard(this, updatedState);
+
+        /**
+         *  Setup periodic ping as a standard player
+         */
         return true;
     }
 
@@ -417,5 +448,9 @@ public class Game implements GameInterface {
 
     public GameLocalState getGameLocalState() {
         return gameLocalState;
+    }
+
+    public void setGameGlobalState(GameGlobalState newState){
+        gameGlobalState = newState;
     }
 }
