@@ -1,10 +1,13 @@
 package Game.State;
+
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class GameLocalState {
 
@@ -17,10 +20,12 @@ public class GameLocalState {
     private TrackerInterface trackerStub = null;
 
     private Map<String, GameInterface> playerStubsMap;
+    private ReadWriteLock playerStubsMapLock;
 
     public GameLocalState() {
         playerType = PlayerType.Standard;
         this.playerStubsMap = new HashMap<>();
+        this.playerStubsMapLock = new ReentrantReadWriteLock();
     }
 
     public String getName() {
@@ -72,27 +77,52 @@ public class GameLocalState {
     }
 
     public Map<String, GameInterface> getPlayerStubsMap() {
-        return playerStubsMap;
+        this.playerStubsMapLock.readLock().lock();
+        try {
+            return this.playerStubsMap;
+        } finally {
+            this.playerStubsMapLock.readLock().unlock();
+        }
     }
 
     public String getPlayerNameByStub(GameInterface targetStub) {
-        for(Map.Entry<String, GameInterface> stub : this.playerStubsMap.entrySet()){
-            if(stub.getValue().equals(targetStub)){
-                return stub.getKey();
+        this.playerStubsMapLock.readLock().lock();
+        try {
+            for(Map.Entry<String, GameInterface> stub : this.playerStubsMap.entrySet()){
+                if(stub.getValue().equals(targetStub)){
+                    return stub.getKey();
+                }
             }
+            return "";
+        } finally {
+            this.playerStubsMapLock.readLock().unlock();
         }
-        return "";
     }
 
     public void setPlayerStubsMap(Map<String, GameInterface> playerStubsMap) {
-        this.playerStubsMap = playerStubsMap;
+        this.playerStubsMapLock.writeLock().lock();
+        try {
+            this.playerStubsMap = playerStubsMap;
+        } finally {
+            this.playerStubsMapLock.writeLock().unlock();
+        }
     }
 
     public void addPlayerStub(String playName, GameInterface Stub){
-        this.playerStubsMap.put(playName, Stub);
+        this.playerStubsMapLock.writeLock().lock();
+        try {
+            this.playerStubsMap.put(playName, Stub);
+        } finally {
+            this.playerStubsMapLock.writeLock().unlock();
+        }
     }
 
     public void removePlayerStubByName(String playName){
-        this.playerStubsMap.remove(playName);
+        this.playerStubsMapLock.writeLock().lock();
+        try {
+            this.playerStubsMap.remove(playName);
+        } finally {
+            this.playerStubsMapLock.writeLock().unlock();
+        }
     }
 }

@@ -111,6 +111,7 @@ public class Game implements GameInterface {
 
         Game game = new Game();
         game.gameLocalState.setName(playerName);
+        game.gameLocalState.setTrackerStub(tracker);
 
         try {
             game.port = tracker.seedPlayerPort();
