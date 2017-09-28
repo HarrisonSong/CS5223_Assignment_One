@@ -18,6 +18,10 @@ public class mazePair extends Pair<Integer, Integer> {
         super(ThreadLocalRandom.current().nextInt(0, max), ThreadLocalRandom.current().nextInt(0, max));
     }
 
+    public mazePair(int row, int column) {
+        super(row, column);
+    }
+
     public int getRow() {
         return getA();
     }

@@ -7,6 +7,8 @@ import Game.Player.PlayerType;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class GameGlobalState implements Serializable {
     public static final int LocationExplorerAttemptTime = 10;
@@ -14,77 +16,46 @@ public class GameGlobalState implements Serializable {
     private int mazeSize;
     private int treasuresSize;
 
-    private List<Player> playerList;
-    private List<mazePair> treasureLocation;
-    private Stack<Integer> activePlayerQueue;
+    private Map<String, Player> playersMap;
+    private List<mazePair> treasuresLocation;
+    private Stack<String> activePlayerQueue;
+
+    private ReadWriteLock playersMapLock;
+    private ReadWriteLock treasuresLocationLock;
+    private ReadWriteLock activePlayerQueueLock;
 
     public GameGlobalState(int mazeSize, int treasuresSize) {
         this.mazeSize = mazeSize;
         this.treasuresSize = treasuresSize;
-        this.playerList = new ArrayList<>();
-        this.treasureLocation = new ArrayList<>(treasuresSize);
+        this.playersMap = new HashMap<>();
+        this.treasuresLocation = new ArrayList<>(treasuresSize);
         for(int i = 0; i < treasuresSize; i++) {
-            treasureLocation.add(new mazePair(mazeSize));
+            treasuresLocation.add(new mazePair(mazeSize));
         }
         this.activePlayerQueue = new Stack<>();
-    }
 
-    public int getIndexOfPlayerByName(String name) {
-        int result = -1;
-        for(Player player: playerList){
-            if(player.isNameAs(name)){
-                result = playerList.indexOf(player);
-                break;
-            }
-        }
-        return result;
-    }
-
-    public boolean isPlayerNameUsed(String name) {
-        return getIndexOfPlayerByName(name) != -1;
-    }
-
-    public boolean addNewPlayerByName(String name, PlayerType type) {
-        if(isPlayerNameUsed(name)) return false;
-        boolean found = false;
-        for(int i = 0; i < LocationExplorerAttemptTime; i++) {
-            mazePair newLocation = new mazePair(this.mazeSize);
-            for(Player p: playerList){
-                if(p.isAtCell(newLocation)) {
-                    found = true;
-                    break;
-                }
-            }
-            if(!found){
-                this.playerList.add(new Player(name, newLocation, 0, type));
-                activePlayerQueue.push(this.playerList.size() - 1);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public boolean removePlayerByName(String name){
-        if(!isPlayerNameUsed(name)) return false;
-        activePlayerQueue.removeElement(getIndexOfPlayerByName(name));
-        this.playerList.remove(getIndexOfPlayerByName(name));
-        return true;
+        this.playersMapLock = new ReentrantReadWriteLock();
+        this.treasuresLocationLock = new ReentrantReadWriteLock();
+        this.activePlayerQueueLock = new ReentrantReadWriteLock();
     }
 
     /**
-     *
-     * @param cmd
+     * Update player state when receiving movement request
+     * @param command
      * @param playerName
      * @return
      *  true: target user is not found.
      *  false: target user is found and proceed movement.
      */
-    public boolean makeMove(Command cmd, String playerName) {
-        int indexOfPlayer = getIndexOfPlayerByName(playerName);
-        if(isPlayerNameUsed(playerName)) {
-            Player targetPlayer = this.playerList.get(indexOfPlayer);
+    public boolean makeMove(Command command, String playerName) {
+        this.playersMapLock.writeLock().lock();
+        this.treasuresLocationLock.writeLock().lock();
+        this.activePlayerQueueLock.writeLock().lock();
+        try{
+            Player targetPlayer = this.playersMap.get(playerName);
             mazePair currentLocation = targetPlayer.getCurrentPosition();
-            switch (cmd){
+            if(targetPlayer == null) return false;
+            switch (command){
                 case West:
                     currentLocation.setColumn(currentLocation.getColumn() - 1);
                     break;
@@ -100,72 +71,136 @@ public class GameGlobalState implements Serializable {
                 default:
                     break;
             }
-            if(isLocationAccessible(currentLocation)) {
+            if(isLocationAccessible(currentLocation)){
                 targetPlayer.setCurrentPosition(currentLocation);
                 List<Integer> treasures = findTreasuresAtLocation(currentLocation);
                 if(!treasures.isEmpty()){
                     targetPlayer.setScore(targetPlayer.getScore() + treasures.size());
-
-                    /**
-                     * pop up the player to be latest active
-                     */
-                    this.activePlayerQueue.removeElement(indexOfPlayer);
-                    this.activePlayerQueue.push(indexOfPlayer);
                     generateNewTreasures(treasures);
                 }
+
+                /**
+                 * pop up the player to be latest active
+                 */
+                this.activePlayerQueue.removeElement(playerName);
+                this.activePlayerQueue.push(playerName);
             }
-            return true;
+        } finally {
+            this.treasuresLocationLock.writeLock().unlock();
+            this.activePlayerQueueLock.writeLock().unlock();
+            this.playersMapLock.writeLock().unlock();
         }
-        return false;
+
+        return true;
     }
 
-    public List<Player> getPlayerList() {
-        return playerList;
-    }
-
-    public void setPlayerList(List<Player> playerList) {
-        this.playerList = playerList;
-    }
-
-    public List<mazePair> getTreasureLocation(){
-        return treasureLocation;
-    }
-
-    public void setTreasureLocation(List<mazePair> treasureLocation) {
-        this.treasureLocation = treasureLocation;
-    }
-
-    public int findNextActivePlayerIndex() {
-        if(this.activePlayerQueue.size() == 0){
-            return -1;
-        }else{
-            return this.activePlayerQueue.pop();
+    public void resetAllStates(Map<String, Player> playersMap, List<mazePair> treasuresLocation, Stack<String> activePlayerQueue){
+        this.playersMapLock.writeLock().lock();
+        this.treasuresLocationLock.writeLock().lock();
+        this.activePlayerQueueLock.writeLock().lock();
+        try {
+            this.playersMap = playersMap;
+            this.treasuresLocation = treasuresLocation;
+            this.activePlayerQueue = activePlayerQueue;
+        } finally {
+            this.playersMapLock.writeLock().unlock();
+            this.treasuresLocationLock.writeLock().unlock();
+            this.activePlayerQueueLock.writeLock().unlock();
         }
     }
 
-    //helper methods
-    private void generateNewTreasures(List<Integer> list) {
-        for(int i=0; i<list.size(); i++){
-            treasureLocation.set(list.get(i).intValue(), new mazePair(this.mazeSize));
+    public boolean updatePlayerType(String playerName, PlayerType type){
+        this.playersMapLock.writeLock().lock();
+        if(!this.playersMap.containsKey(playerName)) return false;
+        try {
+            this.playersMap.get(playerName).setType(type);
+        } finally {
+            this.playersMapLock.writeLock().unlock();
         }
+        return true;
     }
 
-    private List<Integer> findTreasuresAtLocation(mazePair location) {
-        List<Integer> indexList = new ArrayList<>();
-        for(int i = 0; i < this.treasuresSize; i++) {
-            if(treasureLocation.get(i).equals(location)) {
-                indexList.add(i);
+    public boolean addNewPlayerWithName(String playerName, PlayerType type){
+        this.playersMapLock.writeLock().lock();
+        if(!this.playersMap.containsKey(playerName)) return false;
+        try {
+            for(int i = 0; i < LocationExplorerAttemptTime; i++) {
+                mazePair newLocation = new mazePair(this.mazeSize);
+                if(!doesPlayerExistAtLocation(newLocation)){
+                    this.playersMap.put(playerName, new Player(playerName, newLocation, 0, type));
+                    this.activePlayerQueueLock.writeLock().lock();
+                    try {
+                        activePlayerQueue.push(playerName);
+                    } finally {
+                        this.activePlayerQueueLock.writeLock().unlock();
+                    }
+                    return true;
+                }
             }
+            return false;
+        } finally {
+          this.playersMapLock.writeLock().unlock();
         }
-        return indexList;
     }
+
+    public boolean removePlayerByName(String playerName){
+        this.playersMapLock.writeLock().lock();
+        if(!this.playersMap.containsKey(playerName)) return false;
+        this.activePlayerQueueLock.writeLock().lock();
+        try {
+            activePlayerQueue.removeElement(playerName);
+            this.playersMap.remove(playerName);
+        } finally {
+            this.playersMapLock.writeLock().unlock();
+            this.activePlayerQueueLock.writeLock().unlock();
+        }
+        return true;
+    }
+
+    public Map<String, Player> getPlayersMap() {
+        this.playersMapLock.readLock().lock();
+        try {
+            return playersMap;
+        } finally {
+            this.playersMapLock.readLock().unlock();
+        }
+    }
+
+    public List<mazePair> getTreasuresLocation() {
+        this.treasuresLocationLock.readLock().lock();
+        try {
+            return this.treasuresLocation;
+        } finally {
+            this.treasuresLocationLock.readLock().unlock();
+        }
+    }
+
+    public Stack<String> getActivePlayerQueue() {
+        this.activePlayerQueueLock.readLock().lock();
+        try {
+            return this.activePlayerQueue;
+        } finally {
+            this.activePlayerQueueLock.readLock().unlock();
+        }
+    }
+
+    public String findNextActivePlayerName() {
+        this.activePlayerQueueLock.writeLock().lock();
+        try {
+            return this.activePlayerQueue.size() == 0 ? "" : this.activePlayerQueue.pop();
+        } finally {
+            this.activePlayerQueueLock.writeLock().unlock();
+        }
+    }
+
+    /*** Helper methods ***/
 
     private boolean isLocationAccessible(mazePair location) {
-        return location.isValid() && !findPlayerAtLocation(location);
+        return location.isValid() && !doesPlayerExistAtLocation(location);
     }
 
-    private boolean findPlayerAtLocation(mazePair location) {
-        for(Player player : this.playerList){
+    private boolean doesPlayerExistAtLocation(mazePair location) {
+        for(Player player : this.playersMap.values()){
             if(player.isAtCell(location)){
                 return true;
             }
@@ -173,12 +208,20 @@ public class GameGlobalState implements Serializable {
         return false;
     }
 
-    //return id of first player with the type asked.
-    public String getIdByType(PlayerType type) {
-        for(int i=0; i< playerList.size(); i++) {
-            if(playerList.get(i).getType() == type) return playerList.get(i).getName();
+    private List<Integer> findTreasuresAtLocation(mazePair location) {
+        List<Integer> indexList = new ArrayList<>();
+        for(int i = 0; i < this.treasuresSize; i++) {
+            if(treasuresLocation.get(i).equals(location)) {
+                indexList.add(i);
+            }
         }
-        return "";
+        return indexList;
+    }
+
+    private void generateNewTreasures(List<Integer> list) {
+        for(int i = 0; i < list.size(); i++){
+            this.treasuresLocation.set(list.get(i).intValue(), new mazePair(this.mazeSize));
+        }
     }
 }
 

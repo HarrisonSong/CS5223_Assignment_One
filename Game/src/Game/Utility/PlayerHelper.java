@@ -32,9 +32,7 @@ public class PlayerHelper {
             /**
              * Update game global state
              */
-            game.getGameGlobalState().getPlayerList().get(
-                    game.getGameGlobalState().getIndexOfPlayerByName(game.getGameLocalState().getName())
-            ).setType(PlayerType.Primary);
+            game.getGameGlobalState().updatePlayerType(game.getGameLocalState().getName(), PlayerType.Primary);
             return true;
         }
         return false;
@@ -50,7 +48,11 @@ public class PlayerHelper {
         if(game.getGameLocalState().getPlayerType() == PlayerType.Standard){
             game.getGameLocalState().setPlayerType(PlayerType.Backup);
             game.getGameLocalState().setBackupStub(game.getGameLocalState().getLocalStub());
-            updateGameGlobalState(game.getGameGlobalState(), gameGlobalState);
+            game.getGameGlobalState().resetAllStates(
+                    gameGlobalState.getPlayersMap(),
+                    gameGlobalState.getTreasuresLocation(),
+                    gameGlobalState.getActivePlayerQueue()
+            );
             return true;
         }
         return false;
@@ -109,17 +111,6 @@ public class PlayerHelper {
             }
         }
         return enhancedEndPointsMap;
-    }
-
-    /**
-     * Update game global state
-     * server response
-     * @param targetState
-     * @param gameState
-     */
-    public static void updateGameGlobalState(GameGlobalState targetState, GameGlobalState gameState){
-        targetState.setPlayerList(gameState.getPlayerList());
-        targetState.setTreasureLocation(gameState.getTreasureLocation());
     }
 
     public static boolean isTargetAlive(GameInterface stub){

@@ -113,10 +113,10 @@ public class Game implements GameInterface {
         game.gameLocalState.setName(playerName);
 
         try {
-            game.port = tracker.seedPort();
+            game.port = tracker.seedPlayerPort();
             System.out.printf("Player port is %d\n", game.port);
         } catch (RemoteException e) {
-            System.err.println("Failed to contact Tracker METHOD: seedPort");
+            System.err.println("Failed to contact Tracker METHOD: seedPlayerPort");
             System.exit(0);
         }
 
@@ -152,7 +152,7 @@ public class Game implements GameInterface {
 
             switch (playerStubsMap.size()) {
                 case 1: {
-                    game.getGameGlobalState().addNewPlayerByName(playerName, PlayerType.Standard);
+                    game.getGameGlobalState().addNewPlayerWithName(playerName, PlayerType.Standard);
                     if(!game.setupPrimary(true)){
                         System.err.println("Failed to setup primary");
                         System.exit(0);
@@ -222,7 +222,7 @@ public class Game implements GameInterface {
                     }
 
                     if(!isPrimaryAlive){
-                        game.getGameGlobalState().addNewPlayerByName(playerName, PlayerType.Standard);
+                        game.getGameGlobalState().addNewPlayerWithName(playerName, PlayerType.Standard);
                         if(!game.setupPrimary(true)){
                             System.err.println("Failed to setup primary");
                             System.exit(0);
@@ -333,14 +333,14 @@ public class Game implements GameInterface {
      */
     public Object primaryExecuteJoin(String playerName, GameInterface stub){
         if(this.gameLocalState.getPlayerStubsMap().size() == 1){
-            this.gameGlobalState.addNewPlayerByName(playerName, PlayerType.Backup);
+            this.gameGlobalState.addNewPlayerWithName(playerName, PlayerType.Backup);
 
             /**
              * setup the stub to be backup server
              */
             this.gameLocalState.setBackupStub(stub);
         }else{
-            this.gameGlobalState.addNewPlayerByName(playerName, PlayerType.Standard);
+            this.gameGlobalState.addNewPlayerWithName(playerName, PlayerType.Standard);
         }
         this.gameLocalState.addPlayerStub(playerName, stub);
         return this.gameGlobalState;
@@ -354,7 +354,11 @@ public class Game implements GameInterface {
      */
     public boolean backupUpdateGameState(Object gameState){
         if(this.gameLocalState.getPlayerType() == PlayerType.Backup){
-            PlayerHelper.updateGameGlobalState(this.gameGlobalState, (GameGlobalState) gameState);
+            this.gameGlobalState.resetAllStates(
+                    ((GameGlobalState) gameState).getPlayersMap(),
+                    ((GameGlobalState) gameState).getTreasuresLocation(),
+                    ((GameGlobalState) gameState).getActivePlayerQueue()
+            );
         }
         return false;
     }

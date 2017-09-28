@@ -23,23 +23,22 @@ public class PrimaryServerHelper {
      */
     public static void assignBackupServer(GameLocalState gameLocalState, GameGlobalState gameGlobalState){
         while(true){
-            int latestActivePlayerIndex = gameGlobalState.findNextActivePlayerIndex();
-            if(latestActivePlayerIndex == -1){
+            String backupPlayerName = gameGlobalState.findNextActivePlayerName();
+            if(backupPlayerName.equals("")){
                 break;
             }
-            String backupPlayerName = gameGlobalState.getPlayerList().get(latestActivePlayerIndex).getName();
             GameInterface newBackupStub = gameLocalState.getPlayerStubsMap().get(backupPlayerName);
             gameLocalState.setBackupStub(newBackupStub);
             if(gameLocalState.getBackupStub()!= null){
-                setBackupServer(latestActivePlayerIndex, gameLocalState, gameGlobalState);
+                setBackupServer(backupPlayerName, gameLocalState, gameGlobalState);
                 break;
             }
         }
     }
 
-    private static void setBackupServer(int playerIndex,GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+    private static void setBackupServer(String playerName, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
         if(gameLocalState.getPlayerType() == PlayerType.Standard) {
-            gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
+            gameGlobalState.updatePlayerType(playerName, PlayerType.Backup);
             gameLocalState.setBackupStub(gameLocalState.getLocalStub());
         }
     }

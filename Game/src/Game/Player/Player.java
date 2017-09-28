@@ -20,7 +20,7 @@ public class Player {
     }
 
     public mazePair getCurrentPosition() {
-        return currentPosition;
+        return new mazePair(currentPosition.getRow(), currentPosition.getColumn());
     }
 
     public void setCurrentPosition(mazePair currentPosition) {
@@ -42,8 +42,6 @@ public class Player {
     public void setType(PlayerType type) {
         this.type = type;
     }
-
-    public boolean isNameAs(String name) {return this.name.equals(name);}
 
     public boolean isAtCell(mazePair location){ return this.equals(location);}
 }
