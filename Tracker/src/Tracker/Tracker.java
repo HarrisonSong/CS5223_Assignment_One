@@ -3,6 +3,7 @@ package Tracker;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
 
+import java.rmi.RemoteException;
 import java.util.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
@@ -12,6 +13,7 @@ import java.rmi.server.UnicastRemoteObject;
 public class Tracker implements TrackerInterface {
 
     public static final int NAME_LENGTH = 2;
+    public static int portCounter = 1025;
 
     private int N;
     private int K;
@@ -74,9 +76,11 @@ public class Tracker implements TrackerInterface {
         }
     }
 
-    /**
-     * TRACKER INTERFACE IMPLEMENTATION
-     */
+    /*** TrackerInterface Implementation ***/
+    public int seedPort(){
+        return portCounter++;
+    }
+
     public boolean registerNewPlayer(String playName, GameInterface stub){
         if(!this.stubsManager.isPlayerNameUsed(playName) && playName.length() == NAME_LENGTH){
             System.out.println("register success.");
@@ -101,5 +105,7 @@ public class Tracker implements TrackerInterface {
     public int getN() {
         return this.N;
     }
+
+    /*** End of TrackerInterface Implementation ***/
 }
 

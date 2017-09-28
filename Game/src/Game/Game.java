@@ -27,11 +27,11 @@ public class Game implements GameInterface {
     /**
      * static game global constants
      */
-    public static final int DEFAULT_PLAYER_ACCESS_PORT = 8888;
 
     public static int MazeSize;
     public static int TreasureSize;
 
+    private int port;
     private ScheduledExecutorService scheduler;
     private ScheduledFuture backgroundScheduledTask;
 
@@ -46,7 +46,7 @@ public class Game implements GameInterface {
     private GameLocalState gameLocalState;
 
     public Game() {
-        this.gameGlobalState = new GameGlobalState();
+        this.gameGlobalState = new GameGlobalState(MazeSize, TreasureSize);
         this.gameLocalState = new GameLocalState();
     }
 
@@ -78,10 +78,6 @@ public class Game implements GameInterface {
             }
         }
 
-        Registry trackerRegistry;
-        Game game = new Game();
-        game.gameLocalState.setName(playerName);
-
         /**
          * Setup security manager
          */
@@ -92,11 +88,35 @@ public class Game implements GameInterface {
         /**
          * Setup tracker connection and exit when fail.
          */
+        Registry trackerRegistry;
+        TrackerInterface tracker = null;
         try {
             trackerRegistry = LocateRegistry.getRegistry(trackerIP, trackerPort);
-            game.gameLocalState.setTrackerStub((TrackerInterface) trackerRegistry.lookup("Tracker"));
+            tracker = (TrackerInterface) trackerRegistry.lookup("Tracker");
         } catch (RemoteException | NotBoundException e) {
             System.err.println("Failed to locate Tracker");
+            System.exit(0);
+        }
+
+        /**
+         * Fetch maze and treasures size to initialize game
+         */
+        try {
+            MazeSize = tracker.getN();
+            TreasureSize = tracker.getK();
+        }catch (RemoteException e) {
+            System.err.println("Failed to contact Tracker METHOD: getN|getK");
+            System.exit(0);
+        }
+
+        Game game = new Game();
+        game.gameLocalState.setName(playerName);
+
+        try {
+            game.port = tracker.seedPort();
+            System.out.printf("Player port is %d\n", game.port);
+        } catch (RemoteException e) {
+            System.err.println("Failed to contact Tracker METHOD: seedPort");
             System.exit(0);
         }
 
@@ -104,7 +124,7 @@ public class Game implements GameInterface {
          * Setup local stub and exit when fail.
          */
         try {
-            game.gameLocalState.setLocalStub((GameInterface) UnicastRemoteObject.exportObject(game, Game.DEFAULT_PLAYER_ACCESS_PORT));
+            game.gameLocalState.setLocalStub((GameInterface) UnicastRemoteObject.exportObject(game, game.port));
         } catch (RemoteException e) {
             System.err.println("Failed to setup local stub");
             System.exit(0);
@@ -117,25 +137,27 @@ public class Game implements GameInterface {
             TreasureSize = game.gameLocalState.getTrackerStub().getK();
             isRegistered = game.gameLocalState.getTrackerStub().registerNewPlayer(playerName, game.gameLocalState.getLocalStub());
             playerStubsMap = game.gameLocalState.getTrackerStub().serveStubs();
-        } catch (RemoteException | InterruptedException e) {
-            System.err.println("Failed to contact Tracker");
+        } catch (RemoteException e) {
+            System.err.println("Failed to contact Tracker METHOD: getN|getK|registerNewPlayer|serveStubs");
             System.exit(0);
         }
+
         if(isRegistered){
+            System.out.println("Successfully registered");
 
             /**
              * Initialize and collect necessary parameters from tracker
              */
-
             game.gameLocalState.setPlayerStubsMap(playerStubsMap);
 
             switch (playerStubsMap.size()) {
                 case 1: {
-                    PrimaryServerHelper.initializeGlobalState(playerName, game);
+                    game.getGameGlobalState().addNewPlayerByName(playerName, PlayerType.Standard);
                     if(!game.setupPrimary(true)){
                         System.err.println("Failed to setup primary");
                         System.exit(0);
                     }
+                    System.out.println("Successfully setup as Primary");
                     break;
                 }
                 default: {
@@ -200,11 +222,12 @@ public class Game implements GameInterface {
                     }
 
                     if(!isPrimaryAlive){
-                        PrimaryServerHelper.initializeGlobalState(playerName, game);
+                        game.getGameGlobalState().addNewPlayerByName(playerName, PlayerType.Standard);
                         if(!game.setupPrimary(true)){
                             System.err.println("Failed to setup primary");
                             System.exit(0);
                         }
+                        System.out.println("Successfully setup as Primary");
                     }
                     break;
                 }
@@ -289,13 +312,15 @@ public class Game implements GameInterface {
                 command.equals(Command.South) || command.equals(Command.North)){
             this.gameGlobalState.makeMove(command, playerName);
         }
-        try {
-            /**
-             * Remote call backup server to update its global state
-             */
-            this.gameLocalState.getBackupStub().backupUpdateGameState(this.gameGlobalState);
-        } catch (RemoteException e) {
-            e.printStackTrace();
+        if(this.gameLocalState.getBackupStub() != null && !command.equals(Command.Refresh)){
+            try {
+                /**
+                 * Remote call backup server to update its global state
+                 */
+                this.gameLocalState.getBackupStub().backupUpdateGameState(this.gameGlobalState);
+            } catch (RemoteException e) {
+                System.out.println("Primary Server failed to contact Backup Server");
+            }
         }
         return this.gameGlobalState;
     }

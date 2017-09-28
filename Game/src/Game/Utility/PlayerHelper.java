@@ -61,6 +61,7 @@ public class PlayerHelper {
      * @param request
      */
     public static void issueRequest(String request, Game game){
+        System.out.printf("Issuing a request %s\n", request);
         Command playerCommand;
         try{
             playerCommand = Command.fromString(request);
@@ -69,8 +70,7 @@ public class PlayerHelper {
         }
         if(!playerCommand.equals(Command.Invalid)){
             try {
-                GameInterface p = game.getGameLocalState().getPrimaryStub();
-                p.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
+                game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
             } catch (RemoteException e) {
 
                 /**

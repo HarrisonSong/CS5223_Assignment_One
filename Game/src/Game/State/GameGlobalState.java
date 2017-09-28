@@ -1,26 +1,32 @@
 package Game.State;
 
 import Common.mazePair;
-import Game.Game;
 import Game.Player.Command;
 import Game.Player.Player;
 import Game.Player.PlayerType;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class GameGlobalState {
+public class GameGlobalState implements Serializable {
     public static final int LocationExplorerAttemptTime = 10;
 
-    private List<Player> playerList = new ArrayList<Player>();
-    private List<mazePair> treasureLocation = new ArrayList<mazePair>(Game.TreasureSize);
-    private Stack<Integer> activePlayerQueue = new Stack<>();
+    private int mazeSize;
+    private int treasuresSize;
 
-    public void initialize(Player firstPlayer){
-        for(int i=0; i < Game.TreasureSize; i++) {
-            treasureLocation.add(new mazePair(Game.MazeSize));
+    private List<Player> playerList;
+    private List<mazePair> treasureLocation;
+    private Stack<Integer> activePlayerQueue;
+
+    public GameGlobalState(int mazeSize, int treasuresSize) {
+        this.mazeSize = mazeSize;
+        this.treasuresSize = treasuresSize;
+        this.playerList = new ArrayList<>();
+        this.treasureLocation = new ArrayList<>(treasuresSize);
+        for(int i = 0; i < treasuresSize; i++) {
+            treasureLocation.add(new mazePair(mazeSize));
         }
-        activePlayerQueue.push(0);
-        playerList.add(firstPlayer);
+        this.activePlayerQueue = new Stack<>();
     }
 
     public int getIndexOfPlayerByName(String name) {
@@ -42,7 +48,7 @@ public class GameGlobalState {
         if(isPlayerNameUsed(name)) return false;
         boolean found = false;
         for(int i = 0; i < LocationExplorerAttemptTime; i++) {
-            mazePair newLocation = new mazePair(Game.MazeSize);
+            mazePair newLocation = new mazePair(this.mazeSize);
             for(Player p: playerList){
                 if(p.isAtCell(newLocation)) {
                     found = true;
@@ -50,8 +56,8 @@ public class GameGlobalState {
                 }
             }
             if(!found){
-                activePlayerQueue.push(this.playerList.size() - 1);
                 this.playerList.add(new Player(name, newLocation, 0, type));
+                activePlayerQueue.push(this.playerList.size() - 1);
                 return true;
             }
         }
@@ -140,13 +146,13 @@ public class GameGlobalState {
     //helper methods
     private void generateNewTreasures(List<Integer> list) {
         for(int i=0; i<list.size(); i++){
-            treasureLocation.set(list.get(i).intValue(), new mazePair(Game.MazeSize));
+            treasureLocation.set(list.get(i).intValue(), new mazePair(this.mazeSize));
         }
     }
 
     private List<Integer> findTreasuresAtLocation(mazePair location) {
         List<Integer> indexList = new ArrayList<>();
-        for(int i=0; i<Game.TreasureSize; i++) {
+        for(int i = 0; i < this.treasuresSize; i++) {
             if(treasureLocation.get(i).equals(location)) {
                 indexList.add(i);
             }

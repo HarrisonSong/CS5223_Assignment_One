@@ -1,23 +1,21 @@
 package Game.Utility;
 
-import Common.mazePair;
-import Game.Game;
 import Game.State.GameGlobalState;
 import Game.State.GameLocalState;
-import Game.Player.Player;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 
 import java.rmi.RemoteException;
 
 public class PrimaryServerHelper {
-    /**
-     * game setup when first player joins
-     * @param playName
-     */
-    public static void initializeGlobalState(String playName, Game game){
-        Player firstPlayer = new Player(playName, new mazePair(Game.MazeSize), 0, PlayerType.Standard);
-        game.getGameGlobalState().initialize(firstPlayer);
+    public static void updateTrackerStubMap(GameLocalState localState){
+        try {
+            localState.getTrackerStub().resetTrackerStubs(localState.getPlayerStubsMap());
+        } catch (RemoteException e) {
+            e.printStackTrace();
+            System.err.println("Failed to contact Tracker METHOD: resetTrackerStubs");
+            System.exit(0);
+        }
     }
 
     /**
@@ -43,16 +41,6 @@ public class PrimaryServerHelper {
         if(gameLocalState.getPlayerType() == PlayerType.Standard) {
             gameGlobalState.getPlayerList().get(playerIndex).setType(PlayerType.Backup);
             gameLocalState.setBackupStub(gameLocalState.getLocalStub());
-        }
-    }
-
-    public static void updateTrackerStubMap(GameLocalState localState){
-        try {
-            localState.getTrackerStub().resetTrackerStubs(localState.getPlayerStubsMap());
-        } catch (RemoteException | InterruptedException e) {
-            e.printStackTrace();
-            System.err.println("Tracker is offline");
-            System.exit(0);
         }
     }
 }
