@@ -1,6 +1,7 @@
 package Game.BackgroundPing;
 
 import Common.NameTypePair;
+import Game.Player.Player;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 
@@ -36,6 +37,7 @@ public class MultipleTargetsLiveChecker implements Runnable {
     public void run() {
         for(Map.Entry<NameTypePair, GameInterface> stubEntry : this.stubsMap.entrySet()){
             PingMaster pingMaster = new PingMaster(stubEntry.getValue());
+            System.out.printf("%s Ping: \n Name - %s\n", this.proposerType, stubEntry.getKey());
             if(!pingMaster.isReachable()){
                 try {
                     if(this.proposerType.equals(PlayerType.Primary)){

@@ -1,5 +1,6 @@
 package Game.BackgroundPing;
 
+import Game.Player.PlayerType;
 import Interface.GameInterface;
 
 public class SingleTargetLiveChecker implements Runnable {
@@ -15,11 +16,13 @@ public class SingleTargetLiveChecker implements Runnable {
     @Override
     public void run() {
         PingMaster pingMaster = new PingMaster(this.playerStub);
+        System.out.printf("%s Ping: \n", PlayerType.Backup);
         if(!pingMaster.isReachable()){
             try {
                 this.unavailableHandler.handle();
+                System.err.printf("Backup Ping Fail: \n" + "Name - %s\n");
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.printf("background multiple ping error %s \n", e.getMessage());
             }
         }
     }
