@@ -1,7 +1,6 @@
 package Game.BackgroundPing;
 
 import Common.NameTypePair;
-import Game.Player.Player;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 
@@ -13,7 +12,7 @@ public class MultipleTargetsLiveChecker implements Runnable {
     private Map<NameTypePair, GameInterface> stubsMap;
 
     private HandlerInterface primaryToBackupHandler;
-    private HandlerWithPlayerNameInterface primaryTostandardHandler;
+    private HandlerWithPlayerNameInterface primaryToStandardHandler;
 
     private  HandlerInterface standardToPrimaryHandler;
     private  HandlerInterface standardToBackupHandler;
@@ -22,13 +21,13 @@ public class MultipleTargetsLiveChecker implements Runnable {
             PlayerType proposerType,
             Map<NameTypePair, GameInterface> stubsMap,
             HandlerInterface PrimaryToBackupHandler,
-            HandlerWithPlayerNameInterface PrimaryTostandardHandler,
+            HandlerWithPlayerNameInterface PrimaryToStandardHandler,
             HandlerInterface StandardToPrimaryHandler,
             HandlerInterface StandardToBackupHandler) {
         this.proposerType = proposerType;
         this.stubsMap = stubsMap;
         this.primaryToBackupHandler = PrimaryToBackupHandler;
-        this.primaryTostandardHandler = PrimaryTostandardHandler;
+        this.primaryToStandardHandler = PrimaryToStandardHandler;
         this.standardToPrimaryHandler = StandardToPrimaryHandler;
         this.standardToBackupHandler = StandardToBackupHandler;
     }
@@ -43,7 +42,7 @@ public class MultipleTargetsLiveChecker implements Runnable {
                         if(stubEntry.getKey().getPlayerType().equals(PlayerType.Backup)){
                             this.primaryToBackupHandler.handle();
                         }else{
-                            this.primaryTostandardHandler.handleWithPlayerName(stubEntry.getKey().getPlayerName());
+                            this.primaryToStandardHandler.handleWithPlayerName(stubEntry.getKey().getPlayerName());
                         }
                     }else if(this.proposerType.equals(PlayerType.Standard)){
                         if(stubEntry.getKey().getPlayerType().equals(PlayerType.Backup)){

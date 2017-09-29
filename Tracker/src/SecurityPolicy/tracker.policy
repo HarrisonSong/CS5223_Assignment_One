@@ -1,3 +1,0 @@
-grant codebase "file:///Users/qiyuesong/Desktop/CS5223_Assignment_One/Tracker/-"{
-    permission java.security.AllPermission;
-};
