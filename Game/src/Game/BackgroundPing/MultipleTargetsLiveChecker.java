@@ -46,9 +46,9 @@ public class MultipleTargetsLiveChecker implements Runnable {
                         }
                     }else if(this.proposerType.equals(PlayerType.Standard)){
                         if(stubEntry.getKey().getPlayerType().equals(PlayerType.Backup)){
-                            this.standardToPrimaryHandler.handle();
-                        }else{
                             this.standardToBackupHandler.handle();
+                        }else{
+                            this.standardToPrimaryHandler.handle();
                         }
                     }
                 } catch (Exception e) {

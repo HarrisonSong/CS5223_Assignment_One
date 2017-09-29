@@ -459,9 +459,6 @@ public class Game implements GameInterface {
                 List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getBackupStub().getPrimaryAndBackupStubs();
                 this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
                 this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
-                if(this.gameLocalState.getBackupStub().equals(this.gameLocalState.getLocalStub())){
-                    PlayerHelper.setupSelfAsBackup(this, this.gameGlobalState);
-                }
             } catch (RemoteException e) {
                 System.out.println("Both primary and backup are offline");
                 System.exit(0);
@@ -482,9 +479,6 @@ public class Game implements GameInterface {
                 List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getPrimaryStub().getPrimaryAndBackupStubs();
                 this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
                 this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
-                if(this.gameLocalState.getBackupStub().equals(this.gameLocalState.getLocalStub())){
-                    PlayerHelper.setupSelfAsBackup(this, this.gameGlobalState);
-                }
             } catch (RemoteException e) {
                 System.out.println("Both primary and backup are offline");
                 System.exit(0);

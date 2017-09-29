@@ -3,13 +3,10 @@ package Tracker;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
 
-import java.rmi.RemoteException;
 import java.util.*;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
 public class Tracker implements TrackerInterface {
