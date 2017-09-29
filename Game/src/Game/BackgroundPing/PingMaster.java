@@ -18,7 +18,6 @@ public class PingMaster {
         } catch (RemoteException e) {
             System.err.println("target player is offline");
             return false;
-
         }
     }
 }

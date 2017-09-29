@@ -44,4 +44,15 @@ public class Player {
     }
 
     public boolean isAtCell(mazePair location){ return this.equals(location);}
+
+    public void showWhereIAm(){
+        System.out.printf(
+                "Name: %s\n" +
+                        "Score: %d\n" +
+                        "Position: %d %d\n",
+                this.name,
+                this.score,
+                this.currentPosition.getRow(),
+                this.currentPosition.getColumn());
+    }
 }

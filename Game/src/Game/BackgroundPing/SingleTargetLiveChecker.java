@@ -5,9 +5,9 @@ import Interface.GameInterface;
 public class SingleTargetLiveChecker implements Runnable {
 
     private GameInterface playerStub;
-    private PrimaryHandlerInterface unavailableHandler;
+    private HandlerInterface unavailableHandler;
 
-    public SingleTargetLiveChecker(GameInterface playerStub, PrimaryHandlerInterface handler) {
+    public SingleTargetLiveChecker(GameInterface playerStub, HandlerInterface handler) {
         this.playerStub = playerStub;
         this.unavailableHandler = handler;
     }
@@ -17,7 +17,7 @@ public class SingleTargetLiveChecker implements Runnable {
         PingMaster pingMaster = new PingMaster(this.playerStub);
         if(!pingMaster.isReachable()){
             try {
-                this.unavailableHandler.handlePrimaryUnavailability();
+                this.unavailableHandler.handle();
             } catch (Exception e) {
                 e.printStackTrace();
             }

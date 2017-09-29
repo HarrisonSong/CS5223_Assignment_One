@@ -73,6 +73,7 @@ public class GameGlobalState implements Serializable {
             }
             if(isLocationAccessible(currentLocation)){
                 targetPlayer.setCurrentPosition(currentLocation);
+                targetPlayer.showWhereIAm();
                 List<Integer> treasures = findTreasuresAtLocation(currentLocation);
                 if(!treasures.isEmpty()){
                     targetPlayer.setScore(targetPlayer.getScore() + treasures.size());

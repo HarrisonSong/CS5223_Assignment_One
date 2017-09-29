@@ -83,7 +83,7 @@ public class Tracker implements TrackerInterface {
 
     /*** TrackerInterface Implementation ***/
     public synchronized int seedPlayerPort(){
-        while(portCounter == this.trackerPort){
+        if(portCounter != this.trackerPort){
             portCounter++;
         }
         return portCounter;
