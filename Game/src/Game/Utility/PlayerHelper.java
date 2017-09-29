@@ -50,8 +50,7 @@ public class PlayerHelper {
             game.getGameLocalState().setBackupStub(game.getGameLocalState().getLocalStub());
             game.getGameGlobalState().resetAllStates(
                     gameGlobalState.getPlayersMap(),
-                    gameGlobalState.getTreasuresLocation(),
-                    gameGlobalState.getActivePlayerQueue()
+                    gameGlobalState.getTreasuresLocation()
             );
             return true;
         }
@@ -68,8 +67,7 @@ public class PlayerHelper {
         game.getGameLocalState().setPlayerType(PlayerType.Standard);
         game.getGameGlobalState().resetAllStates(
                 gameGlobalState.getPlayersMap(),
-                gameGlobalState.getTreasuresLocation(),
-                gameGlobalState.getActivePlayerQueue()
+                gameGlobalState.getTreasuresLocation()
         );
     }
 
@@ -138,6 +136,4 @@ public class PlayerHelper {
     public static boolean isTargetAlive(GameInterface stub){
         return new PingMaster(stub).isReachable();
     }
-
-
 }

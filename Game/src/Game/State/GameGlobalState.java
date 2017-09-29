@@ -18,11 +18,9 @@ public class GameGlobalState implements Serializable {
 
     private Map<String, Player> playersMap;
     private List<mazePair> treasuresLocation;
-    private Stack<String> activePlayerQueue;
 
     private ReadWriteLock playersMapLock;
     private ReadWriteLock treasuresLocationLock;
-    private ReadWriteLock activePlayerQueueLock;
 
     public GameGlobalState(int mazeSize, int treasuresSize) {
         this.mazeSize = mazeSize;
@@ -32,11 +30,9 @@ public class GameGlobalState implements Serializable {
         for(int i = 0; i < treasuresSize; i++) {
             treasuresLocation.add(new mazePair(mazeSize));
         }
-        this.activePlayerQueue = new Stack<>();
 
         this.playersMapLock = new ReentrantReadWriteLock();
         this.treasuresLocationLock = new ReentrantReadWriteLock();
-        this.activePlayerQueueLock = new ReentrantReadWriteLock();
     }
 
     /**
@@ -50,7 +46,6 @@ public class GameGlobalState implements Serializable {
     public boolean makeMove(Command command, String playerName) {
         this.playersMapLock.writeLock().lock();
         this.treasuresLocationLock.writeLock().lock();
-        this.activePlayerQueueLock.writeLock().lock();
         try{
             Player targetPlayer = this.playersMap.get(playerName);
             mazePair currentLocation = targetPlayer.getCurrentPosition();
@@ -79,34 +74,24 @@ public class GameGlobalState implements Serializable {
                     targetPlayer.setScore(targetPlayer.getScore() + treasures.size());
                     generateNewTreasures(treasures);
                 }
-
-                /**
-                 * pop up the player to be latest active
-                 */
-                this.activePlayerQueue.removeElement(playerName);
-                this.activePlayerQueue.push(playerName);
             }
         } finally {
             this.treasuresLocationLock.writeLock().unlock();
-            this.activePlayerQueueLock.writeLock().unlock();
             this.playersMapLock.writeLock().unlock();
         }
 
         return true;
     }
 
-    public void resetAllStates(Map<String, Player> playersMap, List<mazePair> treasuresLocation, Stack<String> activePlayerQueue){
+    public void resetAllStates(Map<String, Player> playersMap, List<mazePair> treasuresLocation){
         this.playersMapLock.writeLock().lock();
         this.treasuresLocationLock.writeLock().lock();
-        this.activePlayerQueueLock.writeLock().lock();
         try {
             this.playersMap = playersMap;
             this.treasuresLocation = treasuresLocation;
-            this.activePlayerQueue = activePlayerQueue;
         } finally {
             this.playersMapLock.writeLock().unlock();
             this.treasuresLocationLock.writeLock().unlock();
-            this.activePlayerQueueLock.writeLock().unlock();
         }
     }
 
@@ -131,12 +116,6 @@ public class GameGlobalState implements Serializable {
                     Player newPlayer = new Player(playerName, newLocation, 0, type);
                     newPlayer.showWhereIAm();
                     this.playersMap.put(playerName, newPlayer);
-                    this.activePlayerQueueLock.writeLock().lock();
-                    try {
-                        activePlayerQueue.push(playerName);
-                    } finally {
-                        this.activePlayerQueueLock.writeLock().unlock();
-                    }
                     return true;
                 }
             }
@@ -149,13 +128,10 @@ public class GameGlobalState implements Serializable {
     public boolean removePlayerByName(String playerName){
         this.playersMapLock.writeLock().lock();
         if(!this.playersMap.containsKey(playerName)) return false;
-        this.activePlayerQueueLock.writeLock().lock();
         try {
-            activePlayerQueue.removeElement(playerName);
             this.playersMap.remove(playerName);
         } finally {
             this.playersMapLock.writeLock().unlock();
-            this.activePlayerQueueLock.writeLock().unlock();
         }
         return true;
     }
@@ -175,24 +151,6 @@ public class GameGlobalState implements Serializable {
             return this.treasuresLocation;
         } finally {
             this.treasuresLocationLock.readLock().unlock();
-        }
-    }
-
-    public Stack<String> getActivePlayerQueue() {
-        this.activePlayerQueueLock.readLock().lock();
-        try {
-            return this.activePlayerQueue;
-        } finally {
-            this.activePlayerQueueLock.readLock().unlock();
-        }
-    }
-
-    public String findNextActivePlayerName() {
-        this.activePlayerQueueLock.writeLock().lock();
-        try {
-            return this.activePlayerQueue.size() == 0 ? "" : this.activePlayerQueue.pop();
-        } finally {
-            this.activePlayerQueueLock.writeLock().unlock();
         }
     }
 

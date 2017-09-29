@@ -1,6 +1,8 @@
 package Common;
 
-public class Pair<T, V> {
+import java.io.Serializable;
+
+public class Pair<T, V> implements Serializable {
 
     private T a;
     private V b;

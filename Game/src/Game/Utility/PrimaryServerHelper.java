@@ -6,6 +6,7 @@ import Game.Player.PlayerType;
 import Interface.GameInterface;
 
 import java.rmi.RemoteException;
+import java.util.Iterator;
 
 public class PrimaryServerHelper {
     public static void updateTrackerStubMap(GameLocalState localState){
@@ -22,18 +23,24 @@ public class PrimaryServerHelper {
      * Assign player to be backup server
      */
     public static void assignBackupServer(GameLocalState gameLocalState, GameGlobalState gameGlobalState){
-        while(true){
-            String backupPlayerName = gameGlobalState.findNextActivePlayerName();
-            if(backupPlayerName.equals("")){
-                break;
-            }
-            GameInterface newBackupStub = gameLocalState.getPlayerStubsMap().get(backupPlayerName);
-            gameLocalState.setBackupStub(newBackupStub);
-            if(gameLocalState.getBackupStub()!= null){
-                setBackupServer(backupPlayerName, gameLocalState, gameGlobalState);
-                break;
-            }
-        }
+         Iterator<String> iterator = gameGlobalState.getPlayersMap().keySet().iterator();
+         while(iterator.hasNext()){
+             String backupPlayerName = iterator.next();
+             if(backupPlayerName.equals(gameLocalState.getName())){
+                 System.out.println("Primary cannot be backup");
+                 continue;
+             }
+             try {
+                 GameInterface newBackupStub = gameLocalState.getPlayerStubsMap().get(backupPlayerName);
+                 if(newBackupStub.backupUpdateGameGlobalState(gameGlobalState)){
+                     gameLocalState.setBackupStub(newBackupStub);
+                     setBackupServer(backupPlayerName, gameLocalState, gameGlobalState);
+                 }
+                 break;
+             } catch (RemoteException e) {
+                 gameGlobalState.removePlayerByName(backupPlayerName);
+             }
+         }
     }
 
     private static void setBackupServer(String playerName, GameLocalState gameLocalState, GameGlobalState gameGlobalState){

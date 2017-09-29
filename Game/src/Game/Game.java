@@ -218,6 +218,9 @@ public class Game implements GameInterface {
                                 System.err.println("Failed to setup backup");
                                 System.exit(0);
                             }
+                            System.out.println("Successfully setup as Backup");
+                        }else{
+                            game.setupStandard(updatedState);
                         }
 
                         isPrimaryAlive = true;
@@ -317,7 +320,7 @@ public class Game implements GameInterface {
         }
         this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
                 new MultipleTargetsLiveChecker(
-                        PlayerType.Primary,
+                        PlayerType.Standard,
                         PlayerHelper.retrieveEnhancedStubsMap(this.gameLocalState),
                         null,
                         null,
@@ -356,7 +359,7 @@ public class Game implements GameInterface {
                 /**
                  * Remote call backup server to update its global state
                  */
-                this.gameLocalState.getBackupStub().backupUpdateGameState(this.gameGlobalState);
+                this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
             } catch (RemoteException e) {
                 System.out.println("Primary Server failed to contact Backup Server");
             }
@@ -388,16 +391,16 @@ public class Game implements GameInterface {
     /**
      * update local backup server global state from
      * updated primary server data.
-     * @param gameState
+     * @param gameGlobalState
      * @return
      */
-    public boolean backupUpdateGameState(Object gameState){
+    public boolean backupUpdateGameGlobalState(Object gameGlobalState){
         if(this.gameLocalState.getPlayerType() == PlayerType.Backup){
             this.gameGlobalState.resetAllStates(
-                    ((GameGlobalState) gameState).getPlayersMap(),
-                    ((GameGlobalState) gameState).getTreasuresLocation(),
-                    ((GameGlobalState) gameState).getActivePlayerQueue()
+                    ((GameGlobalState) gameGlobalState).getPlayersMap(),
+                    ((GameGlobalState) gameGlobalState).getTreasuresLocation()
             );
+            return true;
         }
         return false;
     }
@@ -449,13 +452,16 @@ public class Game implements GameInterface {
     public void standardPlayerHandlePrimaryServerUnavailability(){
         try {
             /*** Wait for some time ***/
-            TimeUnit.MILLISECONDS.sleep(1300);
+            TimeUnit.MILLISECONDS.sleep(700);
 
             try {
                 /*** Contact backup server ***/
                 List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getBackupStub().getPrimaryAndBackupStubs();
                 this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
                 this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
+                if(this.gameLocalState.getBackupStub().equals(this.gameLocalState.getLocalStub())){
+                    PlayerHelper.setupSelfAsBackup(this, this.gameGlobalState);
+                }
             } catch (RemoteException e) {
                 System.out.println("Both primary and backup are offline");
                 System.exit(0);
@@ -469,13 +475,16 @@ public class Game implements GameInterface {
     public void standardPlayerHandleBackupServerUnavailability(){
         try {
             /*** Wait for some time ***/
-            TimeUnit.MILLISECONDS.sleep(1300);
+            TimeUnit.MILLISECONDS.sleep(700);
 
             try {
                 /*** Contact primary server ***/
                 List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getPrimaryStub().getPrimaryAndBackupStubs();
                 this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
                 this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
+                if(this.gameLocalState.getBackupStub().equals(this.gameLocalState.getLocalStub())){
+                    PlayerHelper.setupSelfAsBackup(this, this.gameGlobalState);
+                }
             } catch (RemoteException e) {
                 System.out.println("Both primary and backup are offline");
                 System.exit(0);
