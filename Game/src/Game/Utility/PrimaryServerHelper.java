@@ -35,6 +35,7 @@ public class PrimaryServerHelper {
                  newBackupStub.backupUpdateGameGlobalState(gameGlobalState);
                  gameLocalState.setBackupStub(newBackupStub);
                  setBackupServer(backupPlayerName, gameLocalState, gameGlobalState);
+                 System.out.printf("Successfully set %s to be backup.\n", backupPlayerName);
                  break;
              } catch (RemoteException e) {
                  gameGlobalState.removePlayerByName(backupPlayerName);

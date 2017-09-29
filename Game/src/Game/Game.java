@@ -399,7 +399,7 @@ public class Game implements GameInterface {
                 ((GameGlobalState) gameGlobalState).getPlayersMap(),
                 ((GameGlobalState) gameGlobalState).getTreasuresLocation()
         );
-        System.out.println();
+        System.out.printf("Successfully promoted to be backup. Name: %s\n", this.gameLocalState.getName());
     }
 
     /**
