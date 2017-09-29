@@ -128,7 +128,9 @@ public class GameGlobalState implements Serializable {
             for(int i = 0; i < LocationExplorerAttemptTime; i++) {
                 mazePair newLocation = new mazePair(this.mazeSize);
                 if(!doesPlayerExistAtLocation(newLocation)){
-                    this.playersMap.put(playerName, new Player(playerName, newLocation, 0, type));
+                    Player newPlayer = new Player(playerName, newLocation, 0, type);
+                    newPlayer.showWhereIAm();
+                    this.playersMap.put(playerName, newPlayer);
                     this.activePlayerQueueLock.writeLock().lock();
                     try {
                         activePlayerQueue.push(playerName);

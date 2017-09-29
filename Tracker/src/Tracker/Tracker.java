@@ -24,8 +24,8 @@ public class Tracker implements TrackerInterface {
     private StubsManager stubsManager;
 
     public Tracker(int treasureNumber, int mazeDimension, int port){
-        this.K = treasureNumber;
         this.N = mazeDimension;
+        this.K = treasureNumber;
         this.trackerPort = port;
         this.stubsManager = new StubsManager();
     }
@@ -58,7 +58,7 @@ public class Tracker implements TrackerInterface {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            Tracker tracker = new Tracker(N, K, port);
+            Tracker tracker = new Tracker(K, N, port);
             stub = (TrackerInterface) UnicastRemoteObject.exportObject(tracker, port);
             registry = LocateRegistry.createRegistry(port);
 
@@ -83,7 +83,8 @@ public class Tracker implements TrackerInterface {
 
     /*** TrackerInterface Implementation ***/
     public synchronized int seedPlayerPort(){
-        if(portCounter != this.trackerPort){
+        portCounter++;
+        if(portCounter == this.trackerPort){
             portCounter++;
         }
         return portCounter;

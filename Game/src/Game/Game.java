@@ -109,6 +109,8 @@ public class Game implements GameInterface {
             System.exit(0);
         }
 
+        System.out.printf("Maze size: %d\n", MazeSize);
+        System.out.printf("treasures: %d\n", TreasureSize);
         Game game = new Game();
         game.gameLocalState.setName(playerName);
         game.gameLocalState.setTrackerStub(tracker);
