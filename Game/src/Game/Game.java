@@ -192,22 +192,6 @@ public class Game implements GameInterface {
                         GameGlobalState updatedState = null;
                         try{
                             updatedState = (GameGlobalState) game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
-
-                            /**
-                             * The primary server is online, and join successfully
-                             * 1> Update primary and backup stub
-                             * 2> Set up using returned Global state
-                             */
-                            List<GameInterface> updatedPrimaryAndBackupStubs = game.getGameLocalState().getPrimaryStub().getPrimaryAndBackupStubs();
-                            game.getGameLocalState().setPrimaryStub(updatedPrimaryAndBackupStubs.get(0));
-                            game.getGameLocalState().setBackupStub(updatedPrimaryAndBackupStubs.get(1));
-
-                            if(!game.getGameLocalState().getLocalStub().equals(game.getGameLocalState().getBackupStub())){
-                                game.setupStandard(updatedState);
-                            }else if(!game.setupBackup(updatedState)){
-                                System.err.println("Failed to setup self as backup server");
-                                System.exit(0);
-                            }
                         } catch (RemoteException e){
                             /**
                              * The primary server is offline at the time.
