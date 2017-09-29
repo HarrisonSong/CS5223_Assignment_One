@@ -64,18 +64,13 @@ public class PlayerHelper {
      * @param gameGlobalState: updated global game state from primary server
      * @return promotion status
      */
-    public static boolean setupSelfAsStandard(Game game, GameGlobalState gameGlobalState) {
-        //if(game.getGameLocalState().getPlayerType() == PlayerType.Standard){
+    public static void setupSelfAsStandard(Game game, GameGlobalState gameGlobalState) {
         game.getGameLocalState().setPlayerType(PlayerType.Standard);
-        //game.getGameLocalState().setBackupStub(game.getGameLocalState().getLocalStub());
         game.getGameGlobalState().resetAllStates(
                 gameGlobalState.getPlayersMap(),
                 gameGlobalState.getTreasuresLocation(),
                 gameGlobalState.getActivePlayerQueue()
         );
-            return true;
-        //}
-        //return false;
     }
 
 

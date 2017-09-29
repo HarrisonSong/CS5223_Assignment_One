@@ -1,6 +1,7 @@
 package Game.BackgroundPing;
 
 import Common.NameTypePair;
+import Game.Player.Player;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 
@@ -8,14 +9,28 @@ import java.util.Map;
 
 public class MultipleTargetsLiveChecker implements Runnable {
 
+    private PlayerType proposerType;
     private Map<NameTypePair, GameInterface> stubsMap;
-    private StandardHandlerInterface standardHandler;
-    private BackupHandlerInterface backupHandler;
 
-    public MultipleTargetsLiveChecker(Map<NameTypePair, GameInterface> stubsMap, StandardHandlerInterface standardHandler, BackupHandlerInterface backupHandler) {
+    private HandlerInterface primaryToBackupHandler;
+    private HandlerWithPlayerNameInterface primaryTostandardHandler;
+
+    private  HandlerInterface standardToPrimaryHandler;
+    private  HandlerInterface standardToBackupHandler;
+
+    public MultipleTargetsLiveChecker(
+            PlayerType proposerType,
+            Map<NameTypePair, GameInterface> stubsMap,
+            HandlerInterface PrimaryToBackupHandler,
+            HandlerWithPlayerNameInterface PrimaryTostandardHandler,
+            HandlerInterface StandardToPrimaryHandler,
+            HandlerInterface StandardToBackupHandler) {
+        this.proposerType = proposerType;
         this.stubsMap = stubsMap;
-        this.standardHandler = standardHandler;
-        this.backupHandler = backupHandler;
+        this.primaryToBackupHandler = PrimaryToBackupHandler;
+        this.primaryTostandardHandler = PrimaryTostandardHandler;
+        this.standardToPrimaryHandler = StandardToPrimaryHandler;
+        this.standardToBackupHandler = StandardToBackupHandler;
     }
 
     @Override
@@ -24,13 +39,21 @@ public class MultipleTargetsLiveChecker implements Runnable {
             PingMaster pingMaster = new PingMaster(stubEntry.getValue());
             if(!pingMaster.isReachable()){
                 try {
-                    if(stubEntry.getKey().getPlayerType() == PlayerType.Backup){
-                        this.backupHandler.handleBackupUnavailability();
-                    }else{
-                        this.standardHandler.handleStandardUnavailability(stubEntry.getKey().getPlayerName());
+                    if(this.proposerType.equals(PlayerType.Primary)){
+                        if(stubEntry.getKey().getPlayerType().equals(PlayerType.Backup)){
+                            this.primaryToBackupHandler.handle();
+                        }else{
+                            this.primaryTostandardHandler.handleWithPlayerName(stubEntry.getKey().getPlayerName());
+                        }
+                    }else if(this.proposerType.equals(PlayerType.Standard)){
+                        if(stubEntry.getKey().getPlayerType().equals(PlayerType.Backup)){
+                            this.standardToPrimaryHandler.handle();
+                        }else{
+                            this.standardToBackupHandler.handle();
+                        }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.err.printf("background multiple ping error %s \n", e.getMessage());
                 }
             }
         }
