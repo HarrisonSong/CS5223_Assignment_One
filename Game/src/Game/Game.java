@@ -394,15 +394,12 @@ public class Game implements GameInterface {
      * @param gameGlobalState
      * @return
      */
-    public boolean backupUpdateGameGlobalState(Object gameGlobalState){
-        if(this.gameLocalState.getPlayerType() == PlayerType.Backup){
-            this.gameGlobalState.resetAllStates(
-                    ((GameGlobalState) gameGlobalState).getPlayersMap(),
-                    ((GameGlobalState) gameGlobalState).getTreasuresLocation()
-            );
-            return true;
-        }
-        return false;
+    public void backupUpdateGameGlobalState(Object gameGlobalState){
+        this.gameGlobalState.resetAllStates(
+                ((GameGlobalState) gameGlobalState).getPlayersMap(),
+                ((GameGlobalState) gameGlobalState).getTreasuresLocation()
+        );
+        System.out.println();
     }
 
     /**

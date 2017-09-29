@@ -14,7 +14,7 @@ public interface GameInterface extends Remote {
     /**
      * Backup server exclusive
      */
-    boolean backupUpdateGameGlobalState(Object gameGlobalState) throws RemoteException;
+    void backupUpdateGameGlobalState(Object gameGlobalState) throws RemoteException;
 
     /**
      * Normal player methods

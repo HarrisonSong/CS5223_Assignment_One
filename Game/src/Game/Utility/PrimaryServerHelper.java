@@ -32,10 +32,9 @@ public class PrimaryServerHelper {
              }
              try {
                  GameInterface newBackupStub = gameLocalState.getPlayerStubsMap().get(backupPlayerName);
-                 if(newBackupStub.backupUpdateGameGlobalState(gameGlobalState)){
-                     gameLocalState.setBackupStub(newBackupStub);
-                     setBackupServer(backupPlayerName, gameLocalState, gameGlobalState);
-                 }
+                 newBackupStub.backupUpdateGameGlobalState(gameGlobalState);
+                 gameLocalState.setBackupStub(newBackupStub);
+                 setBackupServer(backupPlayerName, gameLocalState, gameGlobalState);
                  break;
              } catch (RemoteException e) {
                  gameGlobalState.removePlayerByName(backupPlayerName);
