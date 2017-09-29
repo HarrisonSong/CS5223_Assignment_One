@@ -39,12 +39,17 @@ public class MultipleTargetsLiveChecker implements Runnable {
             if(!pingMaster.isReachable()){
                 try {
                     if(this.proposerType.equals(PlayerType.Primary)){
+                        System.out.printf(
+                                "Primary Ping Fail: \n" +
+                                "Name - %s\n", stubEntry.getKey());
                         if(stubEntry.getKey().getPlayerType().equals(PlayerType.Backup)){
                             this.primaryToBackupHandler.handle();
                         }else{
                             this.primaryToStandardHandler.handleWithPlayerName(stubEntry.getKey().getPlayerName());
                         }
                     }else if(this.proposerType.equals(PlayerType.Standard)){
+                        System.out.printf(
+                                "Standard Ping Fail: \n" + "Name - %s\n", stubEntry.getKey());
                         if(stubEntry.getKey().getPlayerType().equals(PlayerType.Backup)){
                             this.standardToBackupHandler.handle();
                         }else{
