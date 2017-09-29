@@ -3,6 +3,7 @@ package Game;
 import Game.BackgroundPing.MultipleTargetsLiveChecker;
 import Game.BackgroundPing.SingleTargetLiveChecker;
 import Game.Player.Command;
+import Game.Player.Player;
 import Game.Player.PlayerType;
 import Game.State.GameGlobalState;
 import Game.State.GameLocalState;
@@ -359,7 +360,9 @@ public class Game implements GameInterface {
                 /**
                  * Remote call backup server to update its global state
                  */
-                this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+                if(!this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState)){
+                    System.err.println("Current player is not backup!!!!!");
+                }
             } catch (RemoteException e) {
                 System.out.println("Primary Server failed to contact Backup Server");
             }
@@ -394,11 +397,24 @@ public class Game implements GameInterface {
      * @param gameGlobalState
      * @return
      */
-    public void backupUpdateGameGlobalState(Object gameGlobalState){
+    public boolean backupUpdateGameGlobalState(Object gameGlobalState){
+        if(this.gameLocalState.getPlayerType().equals(PlayerType.Backup)){
+            this.gameGlobalState.resetAllStates(
+                    ((GameGlobalState) gameGlobalState).getPlayersMap(),
+                    ((GameGlobalState) gameGlobalState).getTreasuresLocation()
+            );
+            return true;
+        }
+        return false;
+    }
+
+    public void playerPromoteAsBackup(Object gameGlobalState){
         this.gameGlobalState.resetAllStates(
                 ((GameGlobalState) gameGlobalState).getPlayersMap(),
                 ((GameGlobalState) gameGlobalState).getTreasuresLocation()
         );
+        this.gameLocalState.setBackupStub(this.gameLocalState.getLocalStub());
+        this.gameLocalState.setPlayerType(PlayerType.Backup);
         System.out.printf("Successfully promoted to be backup. Name: %s\n", this.gameLocalState.getName());
     }
 

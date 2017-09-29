@@ -14,11 +14,12 @@ public interface GameInterface extends Remote {
     /**
      * Backup server exclusive
      */
-    void backupUpdateGameGlobalState(Object gameGlobalState) throws RemoteException;
+    boolean backupUpdateGameGlobalState(Object gameGlobalState) throws RemoteException;
 
     /**
      * Normal player methods
      */
+    void playerPromoteAsBackup(Object gameGlobalState) throws RemoteException;
     List<GameInterface> getPrimaryAndBackupStubs() throws RemoteException;
     boolean isAlive() throws RemoteException;
 }

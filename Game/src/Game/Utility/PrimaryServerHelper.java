@@ -32,9 +32,9 @@ public class PrimaryServerHelper {
              }
              try {
                  GameInterface newBackupStub = gameLocalState.getPlayerStubsMap().get(backupPlayerName);
-                 newBackupStub.backupUpdateGameGlobalState(gameGlobalState);
+                 setBackupServer(backupPlayerName, newBackupStub, gameLocalState, gameGlobalState);
+                 newBackupStub.playerPromoteAsBackup(gameGlobalState);
                  gameLocalState.setBackupStub(newBackupStub);
-                 setBackupServer(backupPlayerName, gameLocalState, gameGlobalState);
                  System.out.printf("Successfully set %s to be backup.\n", backupPlayerName);
                  break;
              } catch (RemoteException e) {
@@ -43,10 +43,8 @@ public class PrimaryServerHelper {
          }
     }
 
-    private static void setBackupServer(String playerName, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
-        if(gameLocalState.getPlayerType() == PlayerType.Standard) {
-            gameGlobalState.updatePlayerType(playerName, PlayerType.Backup);
-            gameLocalState.setBackupStub(gameLocalState.getLocalStub());
-        }
+    private static void setBackupServer(String playerName, GameInterface backupStub, GameLocalState gameLocalState, GameGlobalState gameGlobalState){
+        gameGlobalState.updatePlayerType(playerName, PlayerType.Backup);
+        gameLocalState.setBackupStub(backupStub);
     }
 }
