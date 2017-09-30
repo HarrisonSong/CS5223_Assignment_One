@@ -2,6 +2,7 @@ package Game;
 
 import Game.BackgroundPing.MultipleTargetsLiveChecker;
 import Game.BackgroundPing.SingleTargetLiveChecker;
+import Game.GUI.GridGUI;
 import Game.Player.Command;
 import Game.Player.PlayerType;
 import Game.State.GameGlobalState;
@@ -45,9 +46,15 @@ public class Game implements GameInterface {
      */
     private GameLocalState gameLocalState;
 
+    /**
+     * GUID
+     */
+    private GridGUI gui;
+
     public Game() {
         this.gameGlobalState = new GameGlobalState(MazeSize, TreasureSize);
         this.gameLocalState = new GameLocalState();
+        this.gui = new GridGUI();
     }
 
     /**
@@ -243,6 +250,7 @@ public class Game implements GameInterface {
              * Continuously read user input from
              * standard input.
              */
+            game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
             Scanner inputScanner = new Scanner(System.in);
             while (inputScanner.hasNext()) {
                 PlayerHelper.issueRequest(inputScanner.nextLine(), game);
@@ -520,5 +528,10 @@ public class Game implements GameInterface {
 
     public void setGameGlobalState(GameGlobalState newState){
         gameGlobalState = newState;
+    }
+
+    public void updateGUI(){
+        this.gui.updateGlobalState(this.gameGlobalState);
+        System.out.println("in updateGUI");
     }
 }

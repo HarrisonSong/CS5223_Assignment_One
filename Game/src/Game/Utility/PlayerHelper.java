@@ -91,6 +91,7 @@ public class PlayerHelper {
                 } else {
                     game.setGameGlobalState((GameGlobalState) game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request));
                 }
+
             } catch (RemoteException e) {
 
                 /**
@@ -107,9 +108,12 @@ public class PlayerHelper {
                 }
                 e.printStackTrace();
             }
+
             if(request.equals(Command.Exit.getValue())){
                 System.exit(0);
             }
+            game.updateGUI();
+
         }
     }
 
