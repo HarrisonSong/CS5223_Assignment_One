@@ -18,13 +18,17 @@ public class BackupLiveChecker implements Runnable {
     public void run() {
         PingMaster pingMaster = new PingMaster(this.primaryBackupPair.getPirmaryStub());
         System.out.println("Backup Ping");
-        if(!pingMaster.isReachable()){
-            try {
-                System.err.printf("Backup Ping Fail: \n");
-                this.unavailableHandler.handle();
-            } catch (Exception e) {
-                System.err.printf("background multiple ping error %s \n", e.getMessage());
+        try {
+            if(!pingMaster.isReachable()){
+                try {
+                    System.err.printf("Backup Ping Fail: \n");
+                    this.unavailableHandler.handle();
+                } catch (Exception e) {
+                    System.err.printf("background multiple ping error %s \n", e.getMessage());
+                }
             }
+        } catch (Throwable t){
+            System.err.println("Backup player found one player that is offline.");
         }
     }
 }

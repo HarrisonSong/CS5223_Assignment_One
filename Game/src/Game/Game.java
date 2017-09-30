@@ -268,9 +268,10 @@ public class Game implements GameInterface {
             /**
              * Setup periodic ping to each player
              */
-            if(this.scheduler == null) {
-                this.scheduler = Executors.newScheduledThreadPool(0);
+            if(this.scheduler != null) {
+                this.scheduler.shutdown();
             }
+            this.scheduler = Executors.newScheduledThreadPool(1);
             if(this.backgroundScheduledTask != null) {
                 this.backgroundScheduledTask.cancel(false);
             }
@@ -295,9 +296,10 @@ public class Game implements GameInterface {
             /**
              * Setup periodic ping to primary server
              */
-            if(this.scheduler == null) {
-                this.scheduler = Executors.newScheduledThreadPool(0);
+            if(this.scheduler != null) {
+                this.scheduler.shutdown();
             }
+            this.scheduler = Executors.newScheduledThreadPool(1);
             if(this.backgroundScheduledTask != null) {
                 this.backgroundScheduledTask.cancel(false);
             }
@@ -319,9 +321,10 @@ public class Game implements GameInterface {
         /**
          *  Setup periodic ping as a standard player
          */
-        if(this.scheduler == null) {
-            this.scheduler = Executors.newScheduledThreadPool(0);
+        if(this.scheduler != null) {
+            this.scheduler.shutdown();
         }
+        this.scheduler = Executors.newScheduledThreadPool(1);
         if(this.backgroundScheduledTask != null) {
             this.backgroundScheduledTask.cancel(false);
         }
