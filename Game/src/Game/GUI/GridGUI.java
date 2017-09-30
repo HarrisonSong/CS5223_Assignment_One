@@ -28,12 +28,16 @@ public class GridGUI implements PropertyChangeListener{
     private int N;
 
     private GameGlobalState ggs;
-
+    private Map<String, Player> playerMap;
+    private List<mazePair> treaList;
     public GridGUI(){
 
     }
 
     public void initialization(GameGlobalState ggs, String name, int mazeSize){
+//        this.playerMap = ggs.getPlayersMap();
+//        this.treaList = ggs.getTreasuresLocation();
+//
         this.ggs = ggs;
         N = mazeSize;
 
@@ -92,6 +96,12 @@ public class GridGUI implements PropertyChangeListener{
     public void propertyChange(PropertyChangeEvent evt) {
         System.out.println("Listening");
         updateGlobalState();
+        System.out.println("****** GUI Global State **********");
+        Map<String, Player> mm = ggs.getPlayersMap();
+        for (Map.Entry<String, Player> entry : mm.entrySet()){
+            System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
+        }
+        System.out.println("*****************");
     }
 
 

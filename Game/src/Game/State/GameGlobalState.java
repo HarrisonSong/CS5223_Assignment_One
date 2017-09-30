@@ -96,8 +96,6 @@ public class GameGlobalState implements Serializable {
     }
 
     public void resetAllStates(Map<String, Player> playersMap, Map<String, GameInterface> playerStubsMap, List<mazePair> treasuresLocation){
-        changeSupport.firePropertyChange("PlayersMap", 1, 2);
-        changeSupport.firePropertyChange("TreasureList", 1, 2);
 
         System.out.println("Reset all states ----------------------");
         this.playersMapLock.writeLock().lock();
@@ -112,6 +110,9 @@ public class GameGlobalState implements Serializable {
             this.playerStubsMapLock.writeLock().unlock();
             this.treasuresLocationLock.writeLock().unlock();
         }
+        changeSupport.firePropertyChange("PlayersMap", 1, 2);
+        //changeSupport.firePropertyChange("TreasureList", 1, 2);
+
     }
 
     /*** PlayerMap methods ***/
