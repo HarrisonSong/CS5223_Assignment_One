@@ -120,16 +120,14 @@ public class GameGlobalState implements Serializable {
         this.playersMapLock.writeLock().lock();
         if(this.playersMap.containsKey(playerName)) return false;
         try {
-            for(int i = 0; i < LocationExplorerAttemptTime; i++) {
+            while(true) {
                 mazePair newLocation = new mazePair(this.mazeSize);
-                if(!doesPlayerExistAtLocation(newLocation)){
-                    Player newPlayer = new Player(playerName, newLocation, 0, type);
-                    newPlayer.showWhereIAm();
-                    this.playersMap.put(playerName, newPlayer);
-                    return true;
-                }
+                if (!isLocationAccessible(newLocation) || hasTreasureLocatedAt(newLocation)) continue;
+                Player newPlayer = new Player(playerName, newLocation, 0, type);
+                newPlayer.showWhereIAm();
+                this.playersMap.put(playerName, newPlayer);
+                return true;
             }
-            return false;
         } finally {
           this.playersMapLock.writeLock().unlock();
         }
@@ -224,6 +222,15 @@ public class GameGlobalState implements Serializable {
         return location.isValid() && !doesPlayerExistAtLocation(location);
     }
 
+    private boolean hasTreasureLocatedAt(mazePair mp){
+        for(int i = 0; i < this.treasuresLocation.size(); i++){
+            if(mp.equals(this.treasuresLocation.get(i))){
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean doesPlayerExistAtLocation(mazePair location) {
         for(Player player : this.playersMap.values()){
             if(player.isAtCell(location)){
@@ -251,13 +258,10 @@ public class GameGlobalState implements Serializable {
         }
         while(true){
             mp = new mazePair(this.mazeSize);
-            for(int i = 0; i < this.treasuresLocation.size(); i++){
-                if(mp.equals(this.treasuresLocation.get(i))){
-                    break;
-                }
-            }
+            if(!isLocationAccessible(mp) || hasTreasureLocatedAt(mp)) continue;
             this.treasuresLocation.set(index, mp);
             break;
+
         }
 
     }

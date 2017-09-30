@@ -45,7 +45,7 @@ public class Player implements Serializable {
         this.type = type;
     }
 
-    public boolean isAtCell(mazePair location){ return this.equals(location);}
+    public boolean isAtCell(mazePair location){ return this.currentPosition.equals(location);}
 
     public void showWhereIAm(){
         System.out.printf(
