@@ -271,7 +271,7 @@ public class Game implements GameInterface {
             if(this.scheduler != null) {
                 this.scheduler.shutdown();
             }
-            this.scheduler = Executors.newScheduledThreadPool(1);
+            this.scheduler = Executors.newScheduledThreadPool(0);
             if(this.backgroundScheduledTask != null) {
                 this.backgroundScheduledTask.cancel(false);
             }
@@ -299,7 +299,7 @@ public class Game implements GameInterface {
             if(this.scheduler != null) {
                 this.scheduler.shutdown();
             }
-            this.scheduler = Executors.newScheduledThreadPool(1);
+            this.scheduler = Executors.newScheduledThreadPool(0);
             if(this.backgroundScheduledTask != null) {
                 this.backgroundScheduledTask.cancel(false);
             }
@@ -324,7 +324,7 @@ public class Game implements GameInterface {
         if(this.scheduler != null) {
             this.scheduler.shutdown();
         }
-        this.scheduler = Executors.newScheduledThreadPool(1);
+        this.scheduler = Executors.newScheduledThreadPool(0);
         if(this.backgroundScheduledTask != null) {
             this.backgroundScheduledTask.cancel(false);
         }
@@ -520,10 +520,6 @@ public class Game implements GameInterface {
 
     public GameLocalState getGameLocalState() {
         return gameLocalState;
-    }
-
-    public void setGameGlobalState(GameGlobalState newState){
-        gameGlobalState = newState;
     }
 
     public void updateGUI(){
