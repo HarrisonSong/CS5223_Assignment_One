@@ -366,9 +366,7 @@ public class Game implements GameInterface {
                 /**
                  * Remote call backup server to update its global state
                  */
-                if(!this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState)){
-                    System.err.println("Current player is not backup!!!!!");
-                }
+                this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
             } catch (RemoteException e) {
                 System.out.println("Primary Server failed to contact Backup Server");
             }
@@ -394,6 +392,15 @@ public class Game implements GameInterface {
             this.gameGlobalState.addNewPlayerWithName(playerName, PlayerType.Standard);
         }
         this.gameGlobalState.addPlayerStub(playerName, stub);
+
+        try {
+            /**
+             * Remote call backup server to update its global state
+             */
+            this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+        } catch (RemoteException e) {
+            System.out.println("Primary Server failed to contact Backup Server");
+        }
         return this.gameGlobalState;
     }
 
@@ -403,16 +410,13 @@ public class Game implements GameInterface {
      * @param gameGlobalState
      * @return
      */
-    public boolean backupUpdateGameGlobalState(Object gameGlobalState){
-        if(this.gameLocalState.getPlayerType().equals(PlayerType.Backup)){
-            this.gameGlobalState.resetAllStates(
-                    ((GameGlobalState) gameGlobalState).getPlayersMap(),
-                    ((GameGlobalState) gameGlobalState).getPlayerStubsMap(),
-                    ((GameGlobalState) gameGlobalState).getTreasuresLocation()
-            );
-            return true;
-        }
-        return false;
+    public void backupUpdateGameGlobalState(Object gameGlobalState){
+        this.gameGlobalState.resetAllStates(
+                ((GameGlobalState) gameGlobalState).getPlayersMap(),
+                ((GameGlobalState) gameGlobalState).getPlayerStubsMap(),
+                ((GameGlobalState) gameGlobalState).getTreasuresLocation()
+        );
+        System.out.println("Successfully update global state of backup.");
     }
 
     public void playerPromoteAsBackup(Object gameGlobalState){

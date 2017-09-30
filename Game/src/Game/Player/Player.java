@@ -17,10 +17,6 @@ public class Player implements Serializable {
         this.type = type;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public mazePair getCurrentPosition() {
         return new mazePair(currentPosition.getRow(), currentPosition.getColumn());
     }

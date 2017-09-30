@@ -18,7 +18,7 @@ public class PlayerHelper {
      * @param isTheOnlyPlayer
      */
     public static boolean setupSelfAsPrimary(Game game, boolean isTheOnlyPlayer){
-        if(isTheOnlyPlayer || game.getGameLocalState().getPlayerType() == PlayerType.Backup) {
+        if(isTheOnlyPlayer || game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)) {
             /**
              * Update game local state
              */
@@ -41,7 +41,7 @@ public class PlayerHelper {
      * @return promotion status
      */
     public static boolean setupSelfAsBackup(Game game, GameGlobalState gameGlobalState) {
-        if(game.getGameLocalState().getPlayerType() == PlayerType.Standard){
+        if(game.getGameLocalState().getPlayerType().equals(PlayerType.Standard)){
             game.getGameLocalState().setPlayerType(PlayerType.Backup);
             game.getGameLocalState().setBackupStub(game.getGameLocalState().getLocalStub());
             game.getGameGlobalState().resetAllStates(
@@ -85,8 +85,7 @@ public class PlayerHelper {
         }
         if(!playerCommand.equals(Command.Invalid)){
             try {
-                if (game.getGameLocalState().getPlayerType() == PlayerType.Primary)
-                {
+                if (game.getGameLocalState().getPlayerType().equals(PlayerType.Primary)) {
                     game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
                 } else {
                     game.setGameGlobalState((GameGlobalState) game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request));
