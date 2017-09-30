@@ -4,7 +4,6 @@ import Game.BackgroundPing.MultipleTargetsLiveChecker;
 import Game.BackgroundPing.SingleTargetLiveChecker;
 import Game.GUI.GridGUI;
 import Game.Player.Command;
-import Game.Player.Player;
 import Game.Player.PlayerType;
 import Game.State.GameGlobalState;
 import Game.State.GameLocalState;
@@ -159,7 +158,7 @@ public class Game implements GameInterface {
             /**
              * Initialize and collect necessary parameters from tracker
              */
-            game.gameLocalState.setPlayerStubsMap(playerStubsMap);
+            game.gameGlobalState.setPlayerStubsMap(playerStubsMap);
 
             switch (playerStubsMap.size()) {
                 case 1: {
@@ -174,7 +173,7 @@ public class Game implements GameInterface {
                 default: {
                     boolean isPrimaryAlive = false;
 
-                    for(Map.Entry<String, GameInterface> stubEntry : game.getGameLocalState().getPlayerStubsMap().entrySet()){
+                    for(Map.Entry<String, GameInterface> stubEntry : game.gameGlobalState.getPlayerStubsMap().entrySet()){
 
                         if(playerName.equals(stubEntry.getKey())){
                             continue;
@@ -277,7 +276,9 @@ public class Game implements GameInterface {
             this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
                     new MultipleTargetsLiveChecker(
                             PlayerType.Primary,
-                            PlayerHelper.retrieveEnhancedStubsMap(this.gameLocalState),
+                            this.gameLocalState.getPrimaryStub(),
+                            this.gameLocalState.getBackupStub(),
+                            this.gameGlobalState.getPlayerStubsMap(),
                             () -> this.primaryHandleBackupServerUnavailability(),
                             (name) -> this.primaryHandleStandardPlayerUnavailability(name),
                             null,
@@ -330,7 +331,9 @@ public class Game implements GameInterface {
         this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
                 new MultipleTargetsLiveChecker(
                         PlayerType.Standard,
-                        PlayerHelper.retrieveEnhancedStubsMap(this.gameLocalState),
+                        this.gameLocalState.getPrimaryStub(),
+                        this.gameLocalState.getBackupStub(),
+                        this.gameGlobalState.getPlayerStubsMap(),
                         null,
                         null,
                         () -> this.standardPlayerHandlePrimaryServerUnavailability(),
@@ -356,7 +359,7 @@ public class Game implements GameInterface {
             command = Command.Invalid;
         }
         if(command.equals(Command.Exit)){
-            this.gameLocalState.removePlayerStubByName(playerName);
+            this.gameGlobalState.removePlayerStubByName(playerName);
             this.gameGlobalState.removePlayerByName(playerName);
         }
         if(command.equals(Command.East) || command.equals(Command.West) ||
@@ -385,7 +388,7 @@ public class Game implements GameInterface {
      * @return updated global game state
      */
     public Object primaryExecuteJoin(String playerName, GameInterface stub){
-        if(this.gameLocalState.getPlayerStubsMap().size() == 1){
+        if(this.gameGlobalState.getPlayerStubsMap().size() == 1){
             this.gameGlobalState.addNewPlayerWithName(playerName, PlayerType.Backup);
 
             /**
@@ -395,7 +398,7 @@ public class Game implements GameInterface {
         }else{
             this.gameGlobalState.addNewPlayerWithName(playerName, PlayerType.Standard);
         }
-        this.gameLocalState.addPlayerStub(playerName, stub);
+        this.gameGlobalState.addPlayerStub(playerName, stub);
         return this.gameGlobalState;
     }
 
@@ -409,6 +412,7 @@ public class Game implements GameInterface {
         if(this.gameLocalState.getPlayerType().equals(PlayerType.Backup)){
             this.gameGlobalState.resetAllStates(
                     ((GameGlobalState) gameGlobalState).getPlayersMap(),
+                    ((GameGlobalState) gameGlobalState).getPlayerStubsMap(),
                     ((GameGlobalState) gameGlobalState).getTreasuresLocation()
             );
             return true;
@@ -419,6 +423,7 @@ public class Game implements GameInterface {
     public void playerPromoteAsBackup(Object gameGlobalState){
         this.gameGlobalState.resetAllStates(
                 ((GameGlobalState) gameGlobalState).getPlayersMap(),
+                ((GameGlobalState) gameGlobalState).getPlayerStubsMap(),
                 ((GameGlobalState) gameGlobalState).getTreasuresLocation()
         );
         this.gameLocalState.setBackupStub(this.gameLocalState.getLocalStub());
@@ -450,24 +455,24 @@ public class Game implements GameInterface {
     /** Unavailability handlers **/
 
     public void primaryHandleBackupServerUnavailability(){
-        String backupPlayerName = this.gameLocalState.getPlayerNameByStub(this.gameLocalState.getBackupStub());
-        this.gameLocalState.removePlayerStubByName(backupPlayerName);
+        String backupPlayerName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getBackupStub());
+        this.gameGlobalState.removePlayerStubByName(backupPlayerName);
         this.gameGlobalState.removePlayerByName(backupPlayerName);
-        PrimaryServerHelper.assignBackupServer(this.gameLocalState, this.gameGlobalState);
-        PrimaryServerHelper.updateTrackerStubMap(this.gameLocalState);
+        PrimaryServerHelper.assignBackupServer(this);
+        PrimaryServerHelper.updateTrackerStubMap(this);
     }
 
     public void primaryHandleStandardPlayerUnavailability(String playerName){
-        this.gameLocalState.removePlayerStubByName(playerName);
+        this.gameGlobalState.removePlayerStubByName(playerName);
         this.gameGlobalState.removePlayerByName(playerName);
     }
 
     public void backupHandlePrimaryServerUnavailability(){
-        String primaryPlayerName = this.gameLocalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
-        this.gameLocalState.removePlayerStubByName(primaryPlayerName);
+        String primaryPlayerName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
+        this.gameGlobalState.removePlayerStubByName(primaryPlayerName);
         this.gameGlobalState.removePlayerByName(primaryPlayerName);
-        this.setupPrimary((this.gameLocalState.getPlayerStubsMap().size() == 1));
-        PrimaryServerHelper.updateTrackerStubMap(this.gameLocalState);
+        this.setupPrimary((this.gameGlobalState.getPlayerStubsMap().size() == 1));
+        PrimaryServerHelper.updateTrackerStubMap(this);
     }
 
     public void standardPlayerHandlePrimaryServerUnavailability(){

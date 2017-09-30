@@ -19,8 +19,8 @@ public class SingleTargetLiveChecker implements Runnable {
         System.out.printf("%s Ping: \n", PlayerType.Backup);
         if(!pingMaster.isReachable()){
             try {
+                System.err.printf("Backup Ping Fail: \n");
                 this.unavailableHandler.handle();
-                System.err.printf("Backup Ping Fail: \n" + "Name - %s\n");
             } catch (Exception e) {
                 System.err.printf("background multiple ping error %s \n", e.getMessage());
             }

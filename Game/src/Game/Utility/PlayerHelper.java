@@ -1,18 +1,14 @@
 package Game.Utility;
 
-import Common.NameTypePair;
 import Game.BackgroundPing.PingMaster;
 import Game.Game;
 import Game.State.GameGlobalState;
-import Game.State.GameLocalState;
 import Game.Player.Command;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 
 import java.rmi.RemoteException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class PlayerHelper {
@@ -50,6 +46,7 @@ public class PlayerHelper {
             game.getGameLocalState().setBackupStub(game.getGameLocalState().getLocalStub());
             game.getGameGlobalState().resetAllStates(
                     gameGlobalState.getPlayersMap(),
+                    gameGlobalState.getPlayerStubsMap(),
                     gameGlobalState.getTreasuresLocation()
             );
             return true;
@@ -67,6 +64,7 @@ public class PlayerHelper {
         game.getGameLocalState().setPlayerType(PlayerType.Standard);
         game.getGameGlobalState().resetAllStates(
                 gameGlobalState.getPlayersMap(),
+                gameGlobalState.getPlayerStubsMap(),
                 gameGlobalState.getTreasuresLocation()
         );
     }
@@ -117,24 +115,6 @@ public class PlayerHelper {
             game.updateGUI();
 
         }
-    }
-
-    /**
-     * Method to retrieve player name/type mapping with endpoint
-     * @return
-     */
-    public static Map retrieveEnhancedStubsMap(GameLocalState gameLocalState){
-        Map<NameTypePair, GameInterface> enhancedEndPointsMap = new HashMap<>();
-        for(Map.Entry<String, GameInterface> stub : gameLocalState.getPlayerStubsMap().entrySet()){
-            if(!stub.getValue().equals(gameLocalState.getPrimaryStub())){
-                if(stub.getValue().equals(gameLocalState.getBackupStub())){
-                    enhancedEndPointsMap.put(new NameTypePair(stub.getKey(), PlayerType.Backup), stub.getValue());
-                }else{
-                    enhancedEndPointsMap.put(new NameTypePair(stub.getKey(), PlayerType.Standard), stub.getValue());
-                }
-            }
-        }
-        return enhancedEndPointsMap;
     }
 
     public static boolean isTargetAlive(GameInterface stub){
