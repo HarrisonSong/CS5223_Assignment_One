@@ -56,13 +56,15 @@ public class MultipleTargetsLiveChecker implements Runnable {
             }
         } else if (this.proposerType.equals(PlayerType.Standard)) {
             for (Map.Entry<String, GameInterface> stubEntry : this.stubsMap.entrySet()) {
-                System.out.printf("Standard Ping: Name - %s\n", stubEntry.getKey());
+
                 if (stubEntry.getValue().equals(this.primaryStub)) {
+                    System.out.printf("Standard Ping: Primary Name - %s\n", stubEntry.getKey());
                     if (!new PingMaster(stubEntry.getValue()).isReachable()) {
                         System.out.printf("Standard Ping Fail: Name - %s\n", stubEntry.getKey());
                         this.standardToPrimaryHandler.handle();
                     }
                 } else if (stubEntry.getValue().equals(this.backupStub)) {
+                    System.out.printf("Standard Ping: Backup Name - %s\n", stubEntry.getKey());
                     if (!new PingMaster(stubEntry.getValue()).isReachable()) {
                         System.out.printf("Standard Ping Fail: Name - %s\n", stubEntry.getKey());
                         this.standardToBackupHandler.handle();
