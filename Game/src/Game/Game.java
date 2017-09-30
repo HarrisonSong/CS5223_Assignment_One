@@ -528,10 +528,11 @@ public class Game implements GameInterface {
 
     public void setGameGlobalState(GameGlobalState newState){
         gameGlobalState = newState;
+        gameGlobalState.GameGlobalStateRefreshListener();
     }
 
-    public void updateGUI(){
-        this.gui.updateGlobalState(this.gameGlobalState);
-        System.out.println("in updateGUI");
-    }
+//    public void updateGUI(){
+//        this.gui.updateGlobalState(this.gameGlobalState);
+//        System.out.println("in updateGUI");
+//    }
 }
