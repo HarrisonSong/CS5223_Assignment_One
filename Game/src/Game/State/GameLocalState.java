@@ -5,10 +5,15 @@ import Game.Player.PlayerType;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
 
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 public class GameLocalState {
 
-    private PlayerType playerType;
     private String name;
+
+    private PlayerType playerType;
+    private ReadWriteLock playerTypeLock;
 
     private GameInterface localStub = null;
     private TrackerInterface trackerStub = null;
@@ -16,15 +21,8 @@ public class GameLocalState {
     private PrimaryBackupPair primaryBackupPair = new PrimaryBackupPair();
 
     public GameLocalState() {
-        playerType = PlayerType.Standard;
-    }
-
-    public PlayerType getPlayerType() {
-        return playerType;
-    }
-
-    public void setPlayerType(PlayerType playerType) {
-        this.playerType = playerType;
+        this.playerType = PlayerType.Standard;
+        this.playerTypeLock = new ReentrantReadWriteLock();
     }
 
     public String getName() {
@@ -33,6 +31,24 @@ public class GameLocalState {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public PlayerType getPlayerType() {
+        this.playerTypeLock.readLock().lock();
+        try {
+            return this.playerType;
+        } finally {
+            this.playerTypeLock.readLock().unlock();
+        }
+    }
+
+    public void setPlayerType(PlayerType playerType) {
+        this.playerTypeLock.writeLock().lock();
+        try {
+            this.playerType = playerType;
+        } finally {
+            this.playerTypeLock.writeLock().unlock();
+        }
     }
 
     public GameInterface getLocalStub() {

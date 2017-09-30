@@ -458,6 +458,11 @@ public class Game implements GameInterface {
     public void primaryHandleStandardPlayerUnavailability(String playerName){
         this.gameGlobalState.removePlayerStubByName(playerName);
         this.gameGlobalState.removePlayerByName(playerName);
+        try {
+            this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+        } catch (RemoteException e) {
+            System.err.println("Primary failed to contact backup.");
+        }
     }
 
     public void backupHandlePrimaryServerUnavailability(){
@@ -483,7 +488,7 @@ public class Game implements GameInterface {
                 System.exit(0);
             }
         } catch (InterruptedException e1) {
-            System.out.println("System interrupted in standardPlayerHandlePrimaryServerUnavailability");
+            System.err.println("System interrupted in standardPlayerHandlePrimaryServerUnavailability");
         }
     }
 
@@ -502,7 +507,7 @@ public class Game implements GameInterface {
                 System.exit(0);
             }
         } catch (InterruptedException e1) {
-            System.out.println("System interrupted in standardPlayerHandleBackupServerUnavailability");
+            System.err.println("System interrupted in standardPlayerHandleBackupServerUnavailability");
         }
     }
 
