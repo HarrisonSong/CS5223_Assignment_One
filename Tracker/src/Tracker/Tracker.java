@@ -97,6 +97,7 @@ public class Tracker implements TrackerInterface {
     }
 
     public boolean resetTrackerStubs(Map<String, GameInterface> updatedStubs){
+        System.out.println("Successfully update tracker stub map");
         return this.stubsManager.updateStubsMap(updatedStubs);
     }
 

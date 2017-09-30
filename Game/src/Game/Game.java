@@ -1,7 +1,8 @@
 package Game;
 
-import Game.BackgroundPing.MultipleTargetsLiveChecker;
-import Game.BackgroundPing.SingleTargetLiveChecker;
+import Game.BackgroundPing.PrimaryLiveChecker;
+import Game.BackgroundPing.BackupLiveChecker;
+import Game.BackgroundPing.StandardLiveChecker;
 import Game.GUI.GridGUI;
 import Game.Player.Command;
 import Game.Player.PlayerType;
@@ -250,7 +251,7 @@ public class Game implements GameInterface {
              * Continuously read user input from
              * standard input.
              */
-            game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
+            //game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
             Scanner inputScanner = new Scanner(System.in);
             while (inputScanner.hasNext()) {
                 PlayerHelper.issueRequest(inputScanner.nextLine(), game);
@@ -271,18 +272,14 @@ public class Game implements GameInterface {
                 this.scheduler = Executors.newScheduledThreadPool(0);
             }
             if(this.backgroundScheduledTask != null) {
-                this.backgroundScheduledTask.cancel(true);
+                this.backgroundScheduledTask.cancel(false);
             }
             this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
-                    new MultipleTargetsLiveChecker(
-                            PlayerType.Primary,
-                            this.gameLocalState.getPrimaryStub(),
-                            this.gameLocalState.getBackupStub(),
+                    new PrimaryLiveChecker(
+                            this.gameLocalState.getPrimaryBackupPair(),
                             this.gameGlobalState.getPlayerStubsMap(),
                             () -> this.primaryHandleBackupServerUnavailability(),
-                            (name) -> this.primaryHandleStandardPlayerUnavailability(name),
-                            null,
-                            null
+                            (name) -> this.primaryHandleStandardPlayerUnavailability(name)
                     ),
                     500, 500, TimeUnit.MILLISECONDS
             );
@@ -302,11 +299,11 @@ public class Game implements GameInterface {
                 this.scheduler = Executors.newScheduledThreadPool(0);
             }
             if(this.backgroundScheduledTask != null) {
-                this.backgroundScheduledTask.cancel(true);
+                this.backgroundScheduledTask.cancel(false);
             }
             this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
-                    new SingleTargetLiveChecker(
-                            this.gameLocalState.getPrimaryStub(),
+                    new BackupLiveChecker(
+                            this.gameLocalState.getPrimaryBackupPair(),
                             () -> this.backupHandlePrimaryServerUnavailability()
                     ),
                     500, 500, TimeUnit.MILLISECONDS
@@ -326,16 +323,11 @@ public class Game implements GameInterface {
             this.scheduler = Executors.newScheduledThreadPool(0);
         }
         if(this.backgroundScheduledTask != null) {
-            this.backgroundScheduledTask.cancel(true);
+            this.backgroundScheduledTask.cancel(false);
         }
         this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
-                new MultipleTargetsLiveChecker(
-                        PlayerType.Standard,
-                        this.gameLocalState.getPrimaryStub(),
-                        this.gameLocalState.getBackupStub(),
-                        this.gameGlobalState.getPlayerStubsMap(),
-                        null,
-                        null,
+                new StandardLiveChecker(
+                        this.gameLocalState.getPrimaryBackupPair(),
                         () -> this.standardPlayerHandlePrimaryServerUnavailability(),
                         () -> this.standardPlayerHandleBackupServerUnavailability()
                 ),
@@ -421,13 +413,7 @@ public class Game implements GameInterface {
     }
 
     public void playerPromoteAsBackup(Object gameGlobalState){
-        this.gameGlobalState.resetAllStates(
-                ((GameGlobalState) gameGlobalState).getPlayersMap(),
-                ((GameGlobalState) gameGlobalState).getPlayerStubsMap(),
-                ((GameGlobalState) gameGlobalState).getTreasuresLocation()
-        );
-        this.gameLocalState.setBackupStub(this.gameLocalState.getLocalStub());
-        this.gameLocalState.setPlayerType(PlayerType.Backup);
+        this.setupBackup((GameGlobalState) gameGlobalState);
         System.out.printf("Successfully promoted to be backup. Name: %s\n", this.gameLocalState.getName());
     }
 
@@ -490,8 +476,7 @@ public class Game implements GameInterface {
                 System.exit(0);
             }
         } catch (InterruptedException e1) {
-            System.out.println("System interrupted");
-            System.exit(0);
+            System.out.println("System interrupted in standardPlayerHandlePrimaryServerUnavailability");
         }
     }
 
@@ -510,8 +495,7 @@ public class Game implements GameInterface {
                 System.exit(0);
             }
         } catch (InterruptedException e1) {
-            System.out.println("System interrupted");
-            System.exit(0);
+            System.out.println("System interrupted in standardPlayerHandleBackupServerUnavailability");
         }
     }
 

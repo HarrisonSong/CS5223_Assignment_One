@@ -1,22 +1,23 @@
 package Game.BackgroundPing;
 
+import Common.PrimaryBackupPair;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 
-public class SingleTargetLiveChecker implements Runnable {
+public class BackupLiveChecker implements Runnable {
 
-    private GameInterface playerStub;
+    private PrimaryBackupPair primaryBackupPair;
     private HandlerInterface unavailableHandler;
 
-    public SingleTargetLiveChecker(GameInterface playerStub, HandlerInterface handler) {
-        this.playerStub = playerStub;
+    public BackupLiveChecker(PrimaryBackupPair primaryBackupPair, HandlerInterface handler) {
+        this.primaryBackupPair = primaryBackupPair;
         this.unavailableHandler = handler;
     }
 
     @Override
     public void run() {
-        PingMaster pingMaster = new PingMaster(this.playerStub);
-        System.out.printf("%s Ping: \n", PlayerType.Backup);
+        PingMaster pingMaster = new PingMaster(this.primaryBackupPair.getPirmaryStub());
+        System.out.println("Backup Ping");
         if(!pingMaster.isReachable()){
             try {
                 System.err.printf("Backup Ping Fail: \n");
