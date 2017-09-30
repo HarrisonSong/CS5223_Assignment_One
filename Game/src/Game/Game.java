@@ -251,7 +251,7 @@ public class Game implements GameInterface {
              * Continuously read user input from
              * standard input.
              */
-            //game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
+            game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
             Scanner inputScanner = new Scanner(System.in);
             while (inputScanner.hasNext()) {
                 PlayerHelper.issueRequest(inputScanner.nextLine(), game);
@@ -518,8 +518,11 @@ public class Game implements GameInterface {
     }
 
     public void setGameGlobalState(GameGlobalState newState){
-        gameGlobalState = newState;
-        gameGlobalState.GameGlobalStateRefreshListener();
+        this.gameGlobalState.resetAllStates(
+                ((GameGlobalState) newState).getPlayersMap(),
+                ((GameGlobalState) newState).getPlayerStubsMap(),
+                ((GameGlobalState) newState).getTreasuresLocation()
+        );
     }
 
 //    public void updateGUI(){

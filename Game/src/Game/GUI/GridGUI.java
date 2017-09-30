@@ -2,6 +2,8 @@ package Game.GUI;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -14,7 +16,7 @@ import Game.Player.Player;
 import Game.Player.PlayerType;
 import Game.State.GameGlobalState;
 
-public class GridGUI {
+public class GridGUI implements PropertyChangeListener{
     private JFrame mainFrame;
 
     private JPanel infoPanel;
@@ -25,12 +27,16 @@ public class GridGUI {
 
     private int N;
 
+    private GameGlobalState ggs;
+
     public GridGUI(){
 
     }
 
     public void initialization(GameGlobalState ggs, String name, int mazeSize){
+        this.ggs = ggs;
         N = mazeSize;
+
         mainFrame = new JFrame(name);
         mainFrame.setSize(1600,800);
         mainFrame.setLayout(new GridLayout(1, 2));
@@ -79,17 +85,23 @@ public class GridGUI {
         mainFrame.add(mazePanel);
         mainFrame.setVisible(true);
 
-        updateGlobalState(ggs);
-
+        updateGlobalState();
+        ggs.addPropertyChangeListener(this);
     }
 
-    public void updateGlobalState(GameGlobalState updateState){
+    public void propertyChange(PropertyChangeEvent evt) {
+        System.out.println("Listening");
+        updateGlobalState();
+    }
+
+
+    private void updateGlobalState(){
 
         Vector infoVector = infoTable.getDataVector();
         infoVector.clear();
         clearMazeLabels();
-        Map<String, Player> playerMap = updateState.getPlayersMap();
-        List<mazePair> treasuresLocation = updateState.getTreasuresLocation();
+        Map<String, Player> playerMap = this.ggs.getPlayersMap();
+        List<mazePair> treasuresLocation = this.ggs.getTreasuresLocation();
         for (Map.Entry<String, Player> entry : playerMap.entrySet()) {
             Vector<Object> row = new Vector<Object>();
             row.addElement(entry.getKey());
