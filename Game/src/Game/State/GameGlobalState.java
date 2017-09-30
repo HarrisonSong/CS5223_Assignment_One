@@ -32,7 +32,7 @@ public class GameGlobalState implements Serializable {
         this.playerStubsMap = new HashMap<>();
         this.treasuresLocation = new ArrayList<>(treasuresSize);
         for(int i = 0; i < treasuresSize; i++) {
-            treasuresLocation.add(new mazePair(mazeSize));
+            generateNewTreasures(i);
         }
 
         this.playersMapLock = new ReentrantReadWriteLock();
@@ -74,9 +74,9 @@ public class GameGlobalState implements Serializable {
             if(isLocationAccessible(currentLocation)){
                 targetPlayer.setCurrentPosition(currentLocation);
                 targetPlayer.showWhereIAm();
-                List<Integer> treasures = findTreasuresAtLocation(currentLocation);
-                if(!treasures.isEmpty()){
-                    targetPlayer.setScore(targetPlayer.getScore() + treasures.size());
+                int treasures = findTreasuresAtLocation(currentLocation);
+                if(treasures!=-1){
+                    targetPlayer.setScore(targetPlayer.getScore() + 1);
                     generateNewTreasures(treasures);
                 }
             }
@@ -120,16 +120,14 @@ public class GameGlobalState implements Serializable {
         this.playersMapLock.writeLock().lock();
         if(this.playersMap.containsKey(playerName)) return false;
         try {
-            for(int i = 0; i < LocationExplorerAttemptTime; i++) {
+            while(true) {
                 mazePair newLocation = new mazePair(this.mazeSize);
-                if(!doesPlayerExistAtLocation(newLocation)){
-                    Player newPlayer = new Player(playerName, newLocation, 0, type);
-                    newPlayer.showWhereIAm();
-                    this.playersMap.put(playerName, newPlayer);
-                    return true;
-                }
+                if (!isLocationAccessible(newLocation) || hasTreasureLocatedAt(newLocation)) continue;
+                Player newPlayer = new Player(playerName, newLocation, 0, type);
+                newPlayer.showWhereIAm();
+                this.playersMap.put(playerName, newPlayer);
+                return true;
             }
-            return false;
         } finally {
           this.playersMapLock.writeLock().unlock();
         }
@@ -224,6 +222,15 @@ public class GameGlobalState implements Serializable {
         return location.isValid() && !doesPlayerExistAtLocation(location);
     }
 
+    private boolean hasTreasureLocatedAt(mazePair mp){
+        for(int i = 0; i < this.treasuresLocation.size(); i++){
+            if(mp.equals(this.treasuresLocation.get(i))){
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean doesPlayerExistAtLocation(mazePair location) {
         for(Player player : this.playersMap.values()){
             if(player.isAtCell(location)){
@@ -233,20 +240,30 @@ public class GameGlobalState implements Serializable {
         return false;
     }
 
-    private List<Integer> findTreasuresAtLocation(mazePair location) {
-        List<Integer> indexList = new ArrayList<>();
+    private int findTreasuresAtLocation(mazePair location) {
+        int result = -1;
         for(int i = 0; i < this.treasuresSize; i++) {
             if(treasuresLocation.get(i).equals(location)) {
-                indexList.add(i);
+                result = i;
+                break;
             }
         }
-        return indexList;
+        return result;
     }
 
-    private void generateNewTreasures(List<Integer> list) {
-        for(int i = 0; i < list.size(); i++){
-            this.treasuresLocation.set(list.get(i).intValue(), new mazePair(this.mazeSize));
+    private void generateNewTreasures(int index) {
+        mazePair mp;
+        while(treasuresLocation.size()<= index) {
+            treasuresLocation.add(new mazePair(this.mazeSize));
         }
+        while(true){
+            mp = new mazePair(this.mazeSize);
+            if(!isLocationAccessible(mp) || hasTreasureLocatedAt(mp)) continue;
+            this.treasuresLocation.set(index, mp);
+            break;
+
+        }
+
     }
 }
 

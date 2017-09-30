@@ -108,13 +108,13 @@ public class GridGUI {
 
         for(int i=0; i<treasuresLocation.size(); i++){
             mazePair t = treasuresLocation.get(i);
-            String s = mazeLabels[t.getRow()][t.getColumn()].getText();
-            mazeLabels[t.getRow()][t.getColumn()].setText(s+"*");
+            String s = mazeLabels[N-1-t.getRow()][t.getColumn()].getText();
+            mazeLabels[N-1-t.getRow()][t.getColumn()].setText(s+"*");
         }
         for (Map.Entry<String, Player> entry : playerMap.entrySet()) {
             mazePair t= entry.getValue().getCurrentPosition();
-            String s = mazeLabels[t.getRow()][t.getColumn()].getText();
-            mazeLabels[t.getRow()][t.getColumn()].setText(s+entry.getKey());
+            String s = mazeLabels[N-1-t.getRow()][t.getColumn()].getText();
+            mazeLabels[N-1-t.getRow()][t.getColumn()].setText(s+entry.getKey());
         }
 
     }
