@@ -10,11 +10,16 @@ public interface GameInterface extends Remote {
      */
     Object primaryExecuteRemoteRequest(String name, String command) throws RemoteException;
     Object primaryExecuteJoin(String name, GameInterface stub) throws RemoteException;
-    boolean backupUpdateGameState(Object gameGlobalState) throws RemoteException;
+
+    /**
+     * Backup server exclusive
+     */
+    void backupUpdateGameGlobalState(Object gameGlobalState) throws RemoteException;
 
     /**
      * Normal player methods
      */
+    void playerPromoteAsBackup(Object gameGlobalState) throws RemoteException;
     List<GameInterface> getPrimaryAndBackupStubs() throws RemoteException;
     boolean isAlive() throws RemoteException;
 }

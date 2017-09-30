@@ -1,5 +1,6 @@
 package Game.State;
 
+import Common.PrimaryBackupPair;
 import Game.Player.PlayerType;
 import Interface.GameInterface;
 import Interface.TrackerInterface;
@@ -10,9 +11,9 @@ public class GameLocalState {
     private String name;
 
     private GameInterface localStub = null;
-    private GameInterface primaryStub = null;
-    private GameInterface backupStub = null;
     private TrackerInterface trackerStub = null;
+
+    private PrimaryBackupPair primaryBackupPair = new PrimaryBackupPair();
 
     public GameLocalState() {
         playerType = PlayerType.Standard;
@@ -42,22 +43,6 @@ public class GameLocalState {
         this.localStub = stub;
     }
 
-    public GameInterface getPrimaryStub() {
-        return primaryStub;
-    }
-
-    public void setPrimaryStub(GameInterface stub){
-        this.primaryStub = stub;
-    }
-
-    public GameInterface getBackupStub() {
-        return backupStub;
-    }
-
-    public void setBackupStub(GameInterface stub){
-        this.backupStub = stub;
-    }
-
     public TrackerInterface getTrackerStub() {
         return trackerStub;
     }
@@ -65,4 +50,26 @@ public class GameLocalState {
     public void setTrackerStub(TrackerInterface trackerStub){
         this.trackerStub = trackerStub;
     }
+
+    public PrimaryBackupPair getPrimaryBackupPair() {
+        return primaryBackupPair;
+    }
+
+    public GameInterface getPrimaryStub() {
+        return this.primaryBackupPair.getPirmaryStub();
+    }
+
+    public void setPrimaryStub(GameInterface stub){
+        this.primaryBackupPair.setPrimaryStub(stub);
+    }
+
+    public GameInterface getBackupStub() {
+        return this.primaryBackupPair.getBackupStub();
+    }
+
+    public void setBackupStub(GameInterface stub){
+        this.primaryBackupPair.setBackupStub(stub);
+    }
+
+
 }

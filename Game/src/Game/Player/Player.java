@@ -17,10 +17,6 @@ public class Player implements Serializable {
         this.type = type;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public mazePair getCurrentPosition() {
         return new mazePair(currentPosition.getRow(), currentPosition.getColumn());
     }
@@ -45,7 +41,7 @@ public class Player implements Serializable {
         this.type = type;
     }
 
-    public boolean isAtCell(mazePair location){ return this.equals(location);}
+    public boolean isAtCell(mazePair location){ return this.currentPosition.equals(location);}
 
     public void showWhereIAm(){
         System.out.printf(
