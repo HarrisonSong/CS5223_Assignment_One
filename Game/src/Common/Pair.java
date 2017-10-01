@@ -35,7 +35,7 @@ public class Pair<T, V> implements Serializable {
         if(obj == null){return false;}
         if(obj == this) {return true;}
         if(!(obj instanceof mazePair)){return false;}
-        if(((Pair) obj).a == this.a && ((Pair) obj).b == this.b) {return true;}
+        if(((Pair) obj).a.equals(this.a) && ((Pair) obj).b.equals(this.b)) {return true;}
         else{return false;}
     }
 }
