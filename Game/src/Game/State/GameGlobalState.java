@@ -106,9 +106,9 @@ public class GameGlobalState implements Serializable {
             this.playerStubsMap = playerStubsMap;
             this.treasuresLocation = treasuresLocation;
         } finally {
-            this.playersMapLock.writeLock().unlock();
-            this.playerStubsMapLock.writeLock().unlock();
             this.treasuresLocationLock.writeLock().unlock();
+            this.playerStubsMapLock.writeLock().unlock();
+            this.playersMapLock.writeLock().unlock();
         }
         changeSupport.firePropertyChange("PlayersMap", 1, 2);
         //changeSupport.firePropertyChange("TreasureList", 1, 2);
@@ -120,10 +120,9 @@ public class GameGlobalState implements Serializable {
     public boolean updatePlayerType(String playerName, PlayerType type){
         Map<String, Player> oldPlayerMap = new HashMap<>(this.playersMap);
 
-
         this.playersMapLock.writeLock().lock();
-        if(!this.playersMap.containsKey(playerName)) return false;
         try {
+            if(!this.playersMap.containsKey(playerName)) return false;
             this.playersMap.get(playerName).setType(type);
         } finally {
             this.playersMapLock.writeLock().unlock();
@@ -135,8 +134,8 @@ public class GameGlobalState implements Serializable {
     public boolean addNewPlayerWithName(String playerName, PlayerType type){
         Map<String, Player> oldPlayerMap = new HashMap<>(this.playersMap);
         this.playersMapLock.writeLock().lock();
-        if(this.playersMap.containsKey(playerName)) return false;
         try {
+            if(this.playersMap.containsKey(playerName)) return false;
             while(true) {
                 mazePair newLocation = new mazePair(this.mazeSize);
                 if (!isLocationAccessible(newLocation) || hasTreasureLocatedAt(newLocation)) continue;
@@ -148,6 +147,7 @@ public class GameGlobalState implements Serializable {
         } finally {
             changeSupport.firePropertyChange("PlayersMap", 1, 2);
             this.playersMapLock.writeLock().unlock();
+
         }
 
     }
@@ -155,8 +155,9 @@ public class GameGlobalState implements Serializable {
     public boolean removePlayerByName(String playerName){
         Map<String, Player> oldPlayerMap = new HashMap<>(this.playersMap);
         this.playersMapLock.writeLock().lock();
-        if(!this.playersMap.containsKey(playerName)) return false;
         try {
+            if(!this.playersMap.containsKey(playerName)) return false;
+
             this.playersMap.remove(playerName);
         } finally {
             this.playersMapLock.writeLock().unlock();
@@ -302,7 +303,7 @@ public class GameGlobalState implements Serializable {
     public void GameGlobalStateRefreshListener(){
         changeSupport.firePropertyChange("PlayersMap", 1, 2);
         //changeSupport.firePropertyChange("TreasureList", 1, 2);
-        System.out.println("HEU");
+
     }
 }
 

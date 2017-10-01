@@ -63,7 +63,7 @@ public class Game implements GameInterface {
      * @param args
      */
     public static void main(String args[]) {
-
+        //System.setProperty("java.security.policy","file:///home/.../<filename>.policy");
         String trackerIP = "";
         int trackerPort = 0;
         String playerName = "";
