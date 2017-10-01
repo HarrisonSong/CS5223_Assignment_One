@@ -72,7 +72,7 @@ public class StressTest {
         }
 
         Vector<StressTestPlayer> allPlayers = new Vector<StressTestPlayer>();
-        Random random = new Random(7895529103);
+        Random random = new Random(125);
         Scanner scan = new Scanner(System.in);
         int step = 0;
 

@@ -421,8 +421,8 @@ public class Game implements GameInterface {
         System.out.println("Successfully update global state of backup.");
     }
 
-    public void playerPromoteAsBackup(Object gameGlobalState){
-        this.getGameLocalState().setPrimaryStub(this.getGameLocalState().getBackupStub());
+    public void playerPromoteAsBackup(Object gameGlobalState, GameInterface primary){
+        this.getGameLocalState().setPrimaryStub(primary);
         this.setupBackup((GameGlobalState) gameGlobalState);
         System.out.printf("Successfully promoted to be backup. Name: %s\n", this.gameLocalState.getName());
     }

@@ -19,7 +19,7 @@ public interface GameInterface extends Remote {
     /**
      * Normal player methods
      */
-    void playerPromoteAsBackup(Object gameGlobalState) throws RemoteException;
+    void playerPromoteAsBackup(Object gameGlobalState, GameInterface primary) throws RemoteException;
     List<GameInterface> getPrimaryAndBackupStubs() throws RemoteException;
     boolean isAlive() throws RemoteException;
 }
