@@ -35,10 +35,11 @@ public class PrimaryServerHelper {
                  game.getGameLocalState().setBackupStub(newBackupStub);
                  newBackupStub.playerPromoteAsBackup(game.getGameGlobalState());
                  System.out.printf("Successfully set %s to be backup.\n", backupPlayerName);
-                 break;
+                 return;
              } catch (RemoteException e) {
                  game.getGameGlobalState().removePlayerByName(backupPlayerName);
              }
          }
+         game.getGameLocalState().setBackupStub(null);
     }
 }

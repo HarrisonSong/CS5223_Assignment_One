@@ -284,6 +284,7 @@ public class Game implements GameInterface {
                     ),
                     500, 500, TimeUnit.MILLISECONDS
             );
+            System.out.println("!!!! "+this.getGameLocalState().getName()+" become Primary Now");
             return true;
         }
         return false;
@@ -310,6 +311,7 @@ public class Game implements GameInterface {
                     ),
                     500, 500, TimeUnit.MILLISECONDS
             );
+            System.out.println("!!!! "+this.getGameLocalState().getName()+" become Bakup Now");
             return true;
         }
         return false;
@@ -466,11 +468,14 @@ public class Game implements GameInterface {
     }
 
     public void backupHandlePrimaryServerUnavailability(){
+        System.out.println("!!!!Found Primary is dead");
         String primaryPlayerName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
         this.gameGlobalState.removePlayerStubByName(primaryPlayerName);
         this.gameGlobalState.removePlayerByName(primaryPlayerName);
         this.setupPrimary((this.gameGlobalState.getPlayerStubsMap().size() == 1));
+        PrimaryServerHelper.assignBackupServer(this);
         PrimaryServerHelper.updateTrackerStubMap(this);
+
     }
 
     public void standardPlayerHandlePrimaryServerUnavailability(){

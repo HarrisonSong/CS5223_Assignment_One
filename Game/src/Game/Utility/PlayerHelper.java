@@ -27,7 +27,7 @@ public class PlayerHelper {
              */
             game.getGameLocalState().setPlayerType(PlayerType.Primary);
             game.getGameLocalState().setPrimaryStub(game.getGameLocalState().getLocalStub());
-
+            game.getGameLocalState().setBackupStub(null);
             /**
              * Update game global state
              */
