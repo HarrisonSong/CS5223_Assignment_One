@@ -12,18 +12,15 @@ import java.rmi.server.UnicastRemoteObject;
 public class Tracker implements TrackerInterface {
 
     public static final int NAME_LENGTH = 2;
-    public static int portCounter = 1024;
 
     private int N;
     private int K;
 
-    private int trackerPort;
     private StubsManager stubsManager;
 
-    public Tracker(int treasureNumber, int mazeDimension, int port){
+    public Tracker(int treasureNumber, int mazeDimension){
         this.N = mazeDimension;
         this.K = treasureNumber;
-        this.trackerPort = port;
         this.stubsManager = new StubsManager();
     }
 
@@ -55,7 +52,7 @@ public class Tracker implements TrackerInterface {
             System.setSecurityManager(new SecurityManager());
         }
         try {
-            Tracker tracker = new Tracker(K, N, port);
+            Tracker tracker = new Tracker(K, N);
             stub = (TrackerInterface) UnicastRemoteObject.exportObject(tracker, port);
             registry = LocateRegistry.createRegistry(port);
 
@@ -76,15 +73,6 @@ public class Tracker implements TrackerInterface {
                 ee.printStackTrace();
             }
         }
-    }
-
-    /*** TrackerInterface Implementation ***/
-    public synchronized int seedPlayerPort(){
-        portCounter++;
-        if(portCounter == this.trackerPort){
-            portCounter++;
-        }
-        return portCounter;
     }
 
     public boolean registerNewPlayer(String playName, GameInterface stub){

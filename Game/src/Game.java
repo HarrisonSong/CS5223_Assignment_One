@@ -33,7 +33,6 @@ public class Game implements GameInterface {
     public static int MazeSize;
     public static int TreasureSize;
 
-    private int port;
     private ScheduledExecutorService scheduler;
     private ScheduledFuture backgroundScheduledTask;
 
@@ -123,19 +122,11 @@ public class Game implements GameInterface {
         game.gameLocalState.setName(playerName);
         game.gameLocalState.setTrackerStub(tracker);
 
-        try {
-            game.port = tracker.seedPlayerPort();
-            System.out.printf("Player port is %d\n", game.port);
-        } catch (RemoteException e) {
-            System.err.println("Failed to contact Tracker METHOD: seedPlayerPort");
-            System.exit(0);
-        }
-
         /**
          * Setup local stub and exit when fail.
          */
         try {
-            game.gameLocalState.setLocalStub((GameInterface) UnicastRemoteObject.exportObject(game, game.port));
+            game.gameLocalState.setLocalStub((GameInterface) UnicastRemoteObject.exportObject(game, 0));
         } catch (RemoteException e) {
             System.err.println("Failed to setup local stub");
             System.exit(0);
@@ -251,7 +242,7 @@ public class Game implements GameInterface {
              * Continuously read user input from
              * standard input.
              */
-            game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
+            //game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
             Scanner inputScanner = new Scanner(System.in);
             while (inputScanner.hasNext()) {
                 PlayerHelper.issueRequest(inputScanner.nextLine(), game);
