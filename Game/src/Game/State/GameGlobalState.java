@@ -14,7 +14,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class GameGlobalState implements Serializable {
-    public static final int LocationExplorerAttemptTime = 10;
 
     private int mazeSize;
     private int treasuresSize;
@@ -274,8 +273,6 @@ public class GameGlobalState implements Serializable {
     }
 
     private void generateNewTreasures(int index) {
-        List<mazePair> oldTreasureList = this.treasuresLocation;
-
         mazePair mp;
         while(treasuresLocation.size()<= index) {
             treasuresLocation.add(new mazePair(this.mazeSize));

@@ -1,6 +1,5 @@
 package Game.Utility;
 
-import Game.BackgroundPing.PingMaster;
 import Game.Game;
 import Game.Player.Player;
 import Game.State.GameGlobalState;
@@ -9,7 +8,6 @@ import Game.Player.PlayerType;
 import Interface.GameInterface;
 
 import java.rmi.RemoteException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
