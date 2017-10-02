@@ -1,4 +1,4 @@
-package Game.Player;
+//package Game.Player;
 
 public enum Command {
     Invalid("-1"),

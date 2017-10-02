@@ -1,6 +1,6 @@
-package Game.BackgroundPing;
-
-import Interface.GameInterface;
+//package Game.BackgroundPing;
+//
+//import Interface.GameInterface;
 
 import java.rmi.RemoteException;
 

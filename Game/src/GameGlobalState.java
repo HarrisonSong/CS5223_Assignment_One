@@ -1,10 +1,10 @@
-package Game.State;
+//package Game.State;
 
-import Common.mazePair;
-import Game.Player.Command;
-import Game.Player.Player;
-import Game.Player.PlayerType;
-import Interface.GameInterface;
+//import Common.mazePair;
+//import Game.Player.Command;
+//import Game.Player.Player;
+//import Game.Player.PlayerType;
+//import Interface.GameInterface;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;

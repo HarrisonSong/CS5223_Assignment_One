@@ -1,4 +1,4 @@
-package Game.BackgroundPing;
+//package Game.BackgroundPing;
 
 public interface HandlerInterface {
     void handle();

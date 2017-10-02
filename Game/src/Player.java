@@ -1,5 +1,5 @@
-package Game.Player;
-import Common.mazePair;
+//package Game.Player;
+//import Common.mazePair;
 
 import java.io.Serializable;
 

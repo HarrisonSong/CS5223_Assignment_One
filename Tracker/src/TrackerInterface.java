@@ -1,4 +1,6 @@
-package Interface;
+//package Interface;
+
+//import Interface.GameInterface;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

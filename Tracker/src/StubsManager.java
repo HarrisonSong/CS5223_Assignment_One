@@ -1,6 +1,4 @@
-package Tracker;
 
-import Interface.GameInterface;
 
 import java.util.HashMap;
 import java.util.Map;

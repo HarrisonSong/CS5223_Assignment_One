@@ -1,4 +1,4 @@
-package Game.GUI;
+//package Game.GUI;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -11,10 +11,10 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
 
-import Common.mazePair;
-import Game.Player.Player;
-import Game.Player.PlayerType;
-import Game.State.GameGlobalState;
+//import Common.mazePair;
+//import Game.Player.Player;
+//import Game.Player.PlayerType;
+//import Game.State.GameGlobalState;
 
 public class GridGUI implements PropertyChangeListener{
     private JFrame mainFrame;
