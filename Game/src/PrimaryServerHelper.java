@@ -1,9 +1,3 @@
-//package Game.Utility;
-//
-//import Game.Game;
-//import Game.Player.PlayerType;
-//import Interface.GameInterface;
-
 import java.rmi.RemoteException;
 import java.util.Iterator;
 

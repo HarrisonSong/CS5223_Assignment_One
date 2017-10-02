@@ -1,7 +1,3 @@
-//package Game.BackgroundPing;
-
-//import Common.PrimaryBackupPair;
-
 public class BackupLiveChecker implements Runnable {
 
     private PrimaryBackupPair primaryBackupPair;
@@ -15,14 +11,13 @@ public class BackupLiveChecker implements Runnable {
     @Override
     public void run() {
         PingMaster pingMaster = new PingMaster(this.primaryBackupPair.getPirmaryStub());
-        System.out.println("Backup Ping");
         try {
             if(!pingMaster.isReachable()){
                 try {
-                    System.err.printf("Backup Ping Fail: \n");
+                    System.err.printf("Backup Ping Primary Fail: \n");
                     this.unavailableHandler.handle();
                 } catch (Exception e) {
-                    System.err.printf("background multiple ping error %s \n", e.getMessage());
+                    //System.err.printf("background single ping error %s \n", e.getMessage());
                 }
             }
         } catch (Throwable t){

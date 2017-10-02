@@ -11,7 +11,7 @@ public class StandardLiveChecker implements Runnable {
 
     public StandardLiveChecker(PrimaryBackupPair primaryBackupPair,
                                HandlerInterface standardToPrimaryHandler,
-                               HandlerInterface standardToBackupHandler) {
+                               HandlerInterface standardToBackupHandler){
         this.primaryBackupPair = primaryBackupPair;
         this.standardToPrimaryHandler = standardToPrimaryHandler;
         this.standardToBackupHandler = standardToBackupHandler;
@@ -19,7 +19,6 @@ public class StandardLiveChecker implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Standard Ping");
         try {
             if(!new PingMaster(this.primaryBackupPair.getPirmaryStub()).isReachable()){
                 System.out.println("Standard Ping Primary Fail");

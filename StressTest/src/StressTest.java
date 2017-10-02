@@ -1,5 +1,3 @@
-package Test;
-
 /*
  * Version 1.2, Date 28 June 2017
  *
@@ -72,7 +70,7 @@ public class StressTest {
         }
 
         Vector<StressTestPlayer> allPlayers = new Vector<StressTestPlayer>();
-        Random random = new Random(125);
+        Random random = new Random(789552910);
         Scanner scan = new Scanner(System.in);
         int step = 0;
 

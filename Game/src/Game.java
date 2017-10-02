@@ -1,18 +1,3 @@
-//package Game;
-
-//import Game.BackgroundPing.PrimaryLiveChecker;
-//import Game.BackgroundPing.BackupLiveChecker;
-//import Game.BackgroundPing.StandardLiveChecker;
-//import Game.GUI.GridGUI;
-//import Game.Player.Command;
-//import Game.Player.PlayerType;
-//import Game.State.GameGlobalState;
-//import Game.State.GameLocalState;
-//import Interface.GameInterface;
-//import Interface.TrackerInterface;
-//import Game.Utility.PlayerHelper;
-//import Game.Utility.PrimaryServerHelper;
-
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -203,7 +188,7 @@ public class Game implements GameInterface {
                                     List<GameInterface> updatedPrimaryAndBackupStubs = game.getGameLocalState().getPrimaryStub().getPrimaryAndBackupStubs();
                                     game.getGameLocalState().setPrimaryStub(updatedPrimaryAndBackupStubs.get(0));
                                     game.getGameLocalState().setBackupStub(updatedPrimaryAndBackupStubs.get(1));
-                                    isBackupAvailable = updatedPrimaryAndBackupStubs.get(1) == null;
+                                    isBackupAvailable = updatedPrimaryAndBackupStubs.get(1) != null;
                                 } catch (Exception e1) {
                                     System.err.println("Failed to contact both primary server and backup server.");
                                     System.exit(0);
@@ -242,7 +227,7 @@ public class Game implements GameInterface {
              * Continuously read user input from
              * standard input.
              */
-            //game.gui.initialization(game.getGameGlobalState(),game.getGameLocalState().getName(),MazeSize);
+            game.gui.initialization(game.getGameGlobalState(), game.getGameLocalState().getName(), MazeSize);
             Scanner inputScanner = new Scanner(System.in);
             while (inputScanner.hasNext()) {
                 PlayerHelper.issueRequest(inputScanner.nextLine(), game);

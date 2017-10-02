@@ -124,8 +124,6 @@ public class PlayerHelper {
             if(request.equals(Command.Exit.getValue())){
                 System.exit(0);
             }
-
-            //game.updateGUI();
         }
     }
 }

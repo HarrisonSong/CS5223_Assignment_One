@@ -1,8 +1,11 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="Tracker:jar">
+  <artifact type="jar" build-on-make="true" name="Tracker:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/Tracker_jar</output-path>
     <root id="archive" name="Tracker.jar">
       <element id="module-output" name="Tracker" />
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
+      </element>
     </root>
   </artifact>
 </component>

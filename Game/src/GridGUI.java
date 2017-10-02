@@ -1,5 +1,3 @@
-//package Game.GUI;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -10,11 +8,6 @@ import java.util.Vector;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
-
-//import Common.mazePair;
-//import Game.Player.Player;
-//import Game.Player.PlayerType;
-//import Game.State.GameGlobalState;
 
 public class GridGUI implements PropertyChangeListener{
     private JFrame mainFrame;
@@ -28,16 +21,9 @@ public class GridGUI implements PropertyChangeListener{
     private int N;
 
     private GameGlobalState ggs;
-    private Map<String, Player> playerMap;
-    private List<mazePair> treaList;
-    public GridGUI(){
-
-    }
+    public GridGUI(){}
 
     public void initialization(GameGlobalState ggs, String name, int mazeSize){
-//        this.playerMap = ggs.getPlayersMap();
-//        this.treaList = ggs.getTreasuresLocation();
-//
         this.ggs = ggs;
         N = mazeSize;
 
