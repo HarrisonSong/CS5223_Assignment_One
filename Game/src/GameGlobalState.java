@@ -223,6 +223,15 @@ public class GameGlobalState implements Serializable {
         }
     }
 
+    public String getBackUpName(){
+        for(Map.Entry<String, Player> entry : this.playersMap.entrySet())
+        {
+            if (entry.getValue().getType() == PlayerType.Backup)
+                return entry.getKey();
+        }
+        return null;
+    }
+
     /*** Helper methods ***/
 
     private boolean isLocationAccessible(mazePair location) {

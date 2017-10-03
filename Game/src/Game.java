@@ -176,6 +176,13 @@ public class Game implements GameInterface {
                         GameGlobalState updatedState = null;
                         try{
                             updatedState = (GameGlobalState) game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                            System.out.println("@@@ " + updatedState.getBackUpName());
+                            if (updatedState.getBackUpName().equals(playerName))
+                            {
+                                isBackupAvailable = false;
+                            } else {
+                                isBackupAvailable = true;
+                            }
                         } catch (RemoteException e){
                             /**
                              * The primary server is offline at the time.
@@ -227,7 +234,7 @@ public class Game implements GameInterface {
              * Continuously read user input from
              * standard input.
              */
-            game.gui.initialization(game.getGameGlobalState(), game.getGameLocalState().getName(), MazeSize);
+            //game.gui.initialization(game.getGameGlobalState(), game.getGameLocalState().getName(), MazeSize);
             Scanner inputScanner = new Scanner(System.in);
             while (inputScanner.hasNext()) {
                 PlayerHelper.issueRequest(inputScanner.nextLine(), game);
