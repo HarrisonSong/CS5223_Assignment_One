@@ -160,6 +160,20 @@ public class GameGlobalState implements Serializable {
         }
     }
 
+    public String getBackUpName(){
+        this.playersMapLock.readLock().lock();
+        try {
+            for(Map.Entry<String, Player> entry : this.playersMap.entrySet()) {
+                if (entry.getValue().getType().equals(PlayerType.Backup)) {
+                    return entry.getKey();
+                }
+            }
+            return "";
+        } finally {
+            this.playersMapLock.readLock().unlock();
+        }
+    }
+
     /*** PlayerStubMap methods ***/
 
     public List<mazePair> getTreasuresLocation() {
@@ -221,15 +235,6 @@ public class GameGlobalState implements Serializable {
         } finally {
             this.playerStubsMapLock.writeLock().unlock();
         }
-    }
-
-    public String getBackUpName(){
-        for(Map.Entry<String, Player> entry : this.playersMap.entrySet())
-        {
-            if (entry.getValue().getType() == PlayerType.Backup)
-                return entry.getKey();
-        }
-        return null;
     }
 
     /*** Helper methods ***/
@@ -295,7 +300,6 @@ public class GameGlobalState implements Serializable {
     public void GameGlobalStateRefreshListener(){
         changeSupport.firePropertyChange("PlayersMap", 1, 2);
         //changeSupport.firePropertyChange("TreasureList", 1, 2);
-
     }
 }
 

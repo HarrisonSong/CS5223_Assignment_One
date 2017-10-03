@@ -43,33 +43,29 @@ public class GridGUI implements PropertyChangeListener{
         mazePanel = new JPanel();
         mazePanel.setLayout(new BorderLayout());
 
-        Vector<String> columnNames = new Vector<String>();
+        Vector<String> columnNames = new Vector<>();
         columnNames.addElement("Player");
         columnNames.addElement("Score");
         columnNames.addElement("Type");
-        infoTable = new DefaultTableModel(new Vector<Object>(), columnNames);
+        infoTable = new DefaultTableModel(new Vector<>(), columnNames);
         JTable table = new JTable(infoTable);
         table.setEnabled(false);
         infoPanel.setLayout(new BorderLayout());
         infoPanel.add(table.getTableHeader(), BorderLayout.PAGE_START);
         infoPanel.add(table, BorderLayout.CENTER);
+
         // right panel, the maze grid showing players and treasure location
         JPanel mazePanel = new JPanel();
         mazePanel.setLayout(new GridLayout(mazeSize, mazeSize, 0, 0));
-        Border blackline = BorderFactory.createLineBorder(Color.black);
+        Border blackLine = BorderFactory.createLineBorder(Color.black);
         mazeLabels = new JLabel[mazeSize][mazeSize];
-        for (int i = 0; i < mazeSize; i++)
-        {
-            for (int j = 0; j < mazeSize; j++)
-            {
+        for (int i = 0; i < mazeSize; i++) {
+            for (int j = 0; j < mazeSize; j++) {
                 mazeLabels[i][j] = new JLabel("", SwingConstants.CENTER);
-                mazeLabels[i][j].setBorder(blackline);
+                mazeLabels[i][j].setBorder(blackLine);
                 mazePanel.add(mazeLabels[i][j]);
             }
         }
-
-        //JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, infoPanel, mazePanel);
-        //mainFrame.getContentPane().add(splitPane);
 
         mainFrame.add(infoPanel);
         mainFrame.add(mazePanel);
@@ -92,29 +88,26 @@ public class GridGUI implements PropertyChangeListener{
 
 
     private void updateGlobalState(){
-
         Vector infoVector = infoTable.getDataVector();
         infoVector.clear();
         clearMazeLabels();
         Map<String, Player> playerMap = this.ggs.getPlayersMap();
         List<mazePair> treasuresLocation = this.ggs.getTreasuresLocation();
         for (Map.Entry<String, Player> entry : playerMap.entrySet()) {
-            Vector<Object> row = new Vector<Object>();
+            Vector<Object> row = new Vector<>();
             row.addElement(entry.getKey());
             row.addElement(entry.getValue().getScore());
             PlayerType pt = entry.getValue().getType();
             if(pt!= PlayerType.Standard){
                 row.addElement(pt.toString());
-            }else
-            {
+            } else {
                 row.addElement("");
             }
-
             infoVector.addElement(row);
         }
         infoTable.fireTableDataChanged();
 
-        for(int i=0; i<treasuresLocation.size(); i++){
+        for(int i = 0; i<treasuresLocation.size(); i++){
             mazePair t = treasuresLocation.get(i);
             String s = mazeLabels[N-1-t.getRow()][t.getColumn()].getText();
             mazeLabels[N-1-t.getRow()][t.getColumn()].setText(s+"*");
@@ -128,10 +121,8 @@ public class GridGUI implements PropertyChangeListener{
     }
 
     private void clearMazeLabels(){
-        for (int i = 0; i < N; i++)
-        {
-            for (int j = 0; j < N; j++)
-            {
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
                 mazeLabels[i][j].setText("");
             }
         }

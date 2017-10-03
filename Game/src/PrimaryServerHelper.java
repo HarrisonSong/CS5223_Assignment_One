@@ -16,7 +16,12 @@ public class PrimaryServerHelper {
      * Assign player to be backup server
      */
     public static void assignBackupServer(Game game){
-         Iterator<String> iterator = game.getGameGlobalState().getPlayersMap().keySet().iterator();
+        /**
+         * Confirm the old backup server is unavailable.
+         * Release it.
+         */
+        game.getGameLocalState().setBackupStub(null);
+        Iterator<String> iterator = game.getGameGlobalState().getPlayersMap().keySet().iterator();
          while(iterator.hasNext()){
              String backupPlayerName = iterator.next();
              if(backupPlayerName.equals(game.getGameLocalState().getName())){
@@ -34,6 +39,5 @@ public class PrimaryServerHelper {
                  game.getGameGlobalState().removePlayerByName(backupPlayerName);
              }
          }
-         game.getGameLocalState().setBackupStub(null);
     }
 }

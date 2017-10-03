@@ -46,7 +46,7 @@ public class PlayerHelper {
             return true;
         }
         if (game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
-            System.out.println("### "+game.getGameLocalState().getName() +" has been set up as back up");
+            System.out.println("### " + game.getGameLocalState().getName() + " has been set up as back up");
             return true;
         }
         return false;

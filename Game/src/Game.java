@@ -117,13 +117,13 @@ public class Game implements GameInterface {
             System.exit(0);
         }
 
-        Map playerStubsMap = null;
+        Map playerStubsMapFromTracker = null;
         boolean isRegistered = false;
         try {
             MazeSize = game.gameLocalState.getTrackerStub().getN();
             TreasureSize = game.gameLocalState.getTrackerStub().getK();
             isRegistered = game.gameLocalState.getTrackerStub().registerNewPlayer(playerName, game.gameLocalState.getLocalStub());
-            playerStubsMap = game.gameLocalState.getTrackerStub().serveStubs();
+            playerStubsMapFromTracker = game.gameLocalState.getTrackerStub().serveStubs();
         } catch (RemoteException e) {
             System.err.println("Failed to contact Tracker METHOD: getN|getK|registerNewPlayer|serveStubs");
             System.exit(0);
@@ -135,103 +135,100 @@ public class Game implements GameInterface {
             /**
              * Initialize and collect necessary parameters from tracker
              */
-            game.gameGlobalState.setPlayerStubsMap(playerStubsMap);
+            game.gameGlobalState.setPlayerStubsMap(playerStubsMapFromTracker);
 
-            switch (playerStubsMap.size()) {
-                case 1: {
+            if (playerStubsMapFromTracker.size() == 1) {
+                game.getGameGlobalState().addNewPlayerWithName(playerName, PlayerType.Standard);
+                if (!game.setupPrimary(true)) {
+                    System.err.println("Failed to setup primary");
+                    System.exit(0);
+                }
+                System.out.println("Successfully setup as Primary");
+            } else {
+                boolean isPrimaryAlive = false;
+
+                for (Map.Entry<String, GameInterface> stubEntry : game.gameGlobalState.getPlayerStubsMap().entrySet()) {
+                    if (playerName.equals(stubEntry.getKey())) {
+                        continue;
+                    }
+
+                    List<GameInterface> primaryAndBackupStubs;
+                    try {
+                        primaryAndBackupStubs = stubEntry.getValue().getPrimaryAndBackupStubs();
+                    } catch (RemoteException e) {
+                        /**
+                         * The player contacting is offline.
+                         */
+                        continue;
+                    }
+
+                    /**
+                     * Primary server is confirmed to be alive
+                     * by the time. Assign the stub.
+                     */
+                    game.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
+                    game.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
+                    boolean isBackupAvailable = primaryAndBackupStubs.get(1) != null;
+                    GameGlobalState updatedState = null;
+                    try {
+                        updatedState = (GameGlobalState) game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                        System.out.println("@@@ " + updatedState.getBackUpName());
+                        /**
+                         * Current user is promoted by primary as backup already
+                         */
+                        isBackupAvailable = !updatedState.getBackUpName().equals(playerName);
+                    } catch (RemoteException e) {
+                        /**
+                         * The primary server is offline at the time.
+                         */
+                        if (isBackupAvailable) {
+                            game.gameLocalState.setPrimaryStub(game.gameLocalState.getBackupStub());
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(1300);
+                                game.getGameLocalState().getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                                List<GameInterface> updatedPrimaryAndBackupStubs = game.getGameLocalState().getPrimaryStub().getPrimaryAndBackupStubs();
+                                game.getGameLocalState().setPrimaryStub(updatedPrimaryAndBackupStubs.get(0));
+                                game.getGameLocalState().setBackupStub(updatedPrimaryAndBackupStubs.get(1));
+                                isBackupAvailable = updatedPrimaryAndBackupStubs.get(1) != null;
+                            } catch (Exception e1) {
+                                System.err.println("Failed to contact both primary server and backup server.");
+                                System.exit(0);
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    if (!isBackupAvailable) {
+                        if (!game.setupBackup(updatedState)) {
+                            System.err.println("Failed to setup backup");
+                            System.exit(0);
+                        }
+                        System.out.println("Successfully setup as Backup");
+                    } else {
+                        game.setupStandard(updatedState);
+                    }
+
+                    /**
+                     * Confirm primary is alive and
+                     * stop contacting other player
+                     * after finishing all the setup.
+                     */
+                    isPrimaryAlive = true;
+                    break;
+                }
+
+                if (!isPrimaryAlive) {
                     game.getGameGlobalState().addNewPlayerWithName(playerName, PlayerType.Standard);
-                    if(!game.setupPrimary(true)){
+                    if (!game.setupPrimary(true)) {
                         System.err.println("Failed to setup primary");
                         System.exit(0);
                     }
                     System.out.println("Successfully setup as Primary");
-                    break;
-                }
-                default: {
-                    boolean isPrimaryAlive = false;
-
-                    for(Map.Entry<String, GameInterface> stubEntry : game.gameGlobalState.getPlayerStubsMap().entrySet()){
-
-                        if(playerName.equals(stubEntry.getKey())){
-                            continue;
-                        }
-
-                        List<GameInterface> primaryAndBackupStubs;
-                        try {
-                            primaryAndBackupStubs = stubEntry.getValue().getPrimaryAndBackupStubs();
-                        } catch(RemoteException e) {
-                            /**
-                             * The player is offline.
-                             */
-                            continue;
-                        }
-
-                        /**
-                         * Primary server is confirmed to be alive
-                         * by the time. Assign the stub.
-                         */
-                        game.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
-                        game.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
-                        boolean isBackupAvailable = primaryAndBackupStubs.get(1) != null;
-                        GameGlobalState updatedState = null;
-                        try{
-                            updatedState = (GameGlobalState) game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
-                            System.out.println("@@@ " + updatedState.getBackUpName());
-                            if (updatedState.getBackUpName().equals(playerName))
-                            {
-                                isBackupAvailable = false;
-                            } else {
-                                isBackupAvailable = true;
-                            }
-                        } catch (RemoteException e){
-                            /**
-                             * The primary server is offline at the time.
-                             */
-                            if(isBackupAvailable){
-                                game.gameLocalState.setPrimaryStub(game.gameLocalState.getBackupStub());
-                                try {
-                                    TimeUnit.MILLISECONDS.sleep(1300);
-                                    game.getGameLocalState().getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
-                                    List<GameInterface> updatedPrimaryAndBackupStubs = game.getGameLocalState().getPrimaryStub().getPrimaryAndBackupStubs();
-                                    game.getGameLocalState().setPrimaryStub(updatedPrimaryAndBackupStubs.get(0));
-                                    game.getGameLocalState().setBackupStub(updatedPrimaryAndBackupStubs.get(1));
-                                    isBackupAvailable = updatedPrimaryAndBackupStubs.get(1) != null;
-                                } catch (Exception e1) {
-                                    System.err.println("Failed to contact both primary server and backup server.");
-                                    System.exit(0);
-                                }
-                            }else{
-                                break;
-                            }
-                        }
-                        if(!isBackupAvailable){
-                            if(!game.setupBackup(updatedState)){
-                                System.err.println("Failed to setup backup");
-                                System.exit(0);
-                            }
-                            System.out.println("Successfully setup as Backup");
-                        }else{
-                            game.setupStandard(updatedState);
-                        }
-
-                        isPrimaryAlive = true;
-                        break;
-                    }
-
-                    if(!isPrimaryAlive){
-                        game.getGameGlobalState().addNewPlayerWithName(playerName, PlayerType.Standard);
-                        if(!game.setupPrimary(true)){
-                            System.err.println("Failed to setup primary");
-                            System.exit(0);
-                        }
-                        System.out.println("Successfully setup as Primary");
-                    }
-                    break;
                 }
             }
 
             /**
-             * Continuously read user input from
+             * Continuously launch GUI read user input from
              * standard input.
              */
             //game.gui.initialization(game.getGameGlobalState(), game.getGameLocalState().getName(), MazeSize);
@@ -294,7 +291,7 @@ public class Game implements GameInterface {
                     ),
                     500, 500, TimeUnit.MILLISECONDS
             );
-            System.out.println("!!!! "+this.getGameLocalState().getName()+" become Bakup Now");
+            System.out.println("!!!! " + this.getGameLocalState().getName() + " become Backup Now");
             return true;
         }
         return false;
