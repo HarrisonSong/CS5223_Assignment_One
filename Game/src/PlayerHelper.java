@@ -106,19 +106,23 @@ public class PlayerHelper {
                 /**
                  * Primary server is offline
                  */
+                System.out.printf("Primary server is offline when issuing request by %s\n", game.getGameLocalState().getName());
                 if(game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
                     game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
                 }else{
                     try {
-                        TimeUnit.MILLISECONDS.sleep(1000);
+                        System.out.println("Wait for 1 second for backup server promote");
+                        TimeUnit.MILLISECONDS.sleep(Game.RETRY_WAITING_TIME);
                         if(!game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
+                            System.out.println("Current player is not backup");
                             List<GameInterface> serverList = game.getGameLocalState().getBackupStub().getPrimaryAndBackupStubs();
                             game.getGameLocalState().setPrimaryStub(serverList.get(0));
                             game.getGameLocalState().setBackupStub(serverList.get(1));
                         }
                         game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
                     } catch (Exception e1) {
-                        System.err.println("Detect 2 player failures within 2 seconds");
+                        e1.printStackTrace();
+                        System.err.println("ISSUE REQUEST: Detect both primary server and backup server fail within 2 seconds");
                     }
                 }
             }

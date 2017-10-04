@@ -20,6 +20,7 @@ public class PrimaryServerHelper {
          * Confirm the old backup server is unavailable.
          * Release it.
          */
+        System.out.println("Primary assigning new backup server");
         game.getGameLocalState().setBackupStub(null);
         Iterator<String> iterator = game.getGameGlobalState().getPlayersMap().keySet().iterator();
          while(iterator.hasNext()){
@@ -28,11 +29,12 @@ public class PrimaryServerHelper {
                  System.out.println("Primary cannot be backup");
                  continue;
              }
+             System.out.printf("Primary trying to assign %s as backup server\n", backupPlayerName);
              try {
                  game.getGameGlobalState().updatePlayerType(backupPlayerName, PlayerType.Backup);
                  GameInterface newBackupStub = game.getGameGlobalState().getPlayerStubsMap().get(backupPlayerName);
-                 game.getGameLocalState().setBackupStub(newBackupStub);
                  newBackupStub.playerPromoteAsBackup(game.getGameGlobalState(), game.getGameLocalState().getPrimaryStub());
+                 game.getGameLocalState().setBackupStub(newBackupStub);
                  System.out.printf("Successfully set %s to be backup.\n", backupPlayerName);
                  return;
              } catch (RemoteException e) {

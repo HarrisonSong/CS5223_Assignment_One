@@ -72,12 +72,12 @@ public class GridGUI implements PropertyChangeListener{
 
         mainFrame.add(infoPanel);
         mainFrame.add(mazePanel);
+        UIUpdate();
+
         mainFrame.setVisible(true);
+        globalState.addPropertyChangeListener(this);
 
         System.out.println("Player " + name + " has launched the UI.");
-
-        UIUpdate();
-        globalState.addPropertyChangeListener(this);
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
@@ -90,7 +90,6 @@ public class GridGUI implements PropertyChangeListener{
         }
         System.out.println("*****************");
     }
-
 
     private void UIUpdate(){
         Vector infoVector = infoTable.getDataVector();
@@ -124,7 +123,8 @@ public class GridGUI implements PropertyChangeListener{
             infoVector.addElement(row);
         }
 
-        mazePanel.repaint();
+        mainFrame.revalidate();
+        mainFrame.repaint();
     }
 
     private void clearMazeLabels(){

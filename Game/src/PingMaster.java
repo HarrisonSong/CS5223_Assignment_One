@@ -12,7 +12,6 @@ public class PingMaster {
             this.endPointStub.isAlive();
             return true;
         } catch (RemoteException e) {
-            System.err.println("target player is offline");
             return false;
         }
     }

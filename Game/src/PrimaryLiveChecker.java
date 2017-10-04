@@ -29,7 +29,7 @@ public class PrimaryLiveChecker implements Runnable {
                 Map.Entry<String, GameInterface> nextStub = iterator.next();
                 if (!nextStub.getValue().equals(this.primaryBackupPair.getPirmaryStub())) {
                     if (!new PingMaster(nextStub.getValue()).isReachable()) {
-                        System.err.printf("Primary Ping Fail: Name - %s\n", nextStub.getKey());
+                        System.err.printf("PRIMARY PING FAILURE: standard Name - %s\n", nextStub.getKey());
                         if (nextStub.getValue().equals(this.primaryBackupPair.getBackupStub())) {
                             this.primaryToBackupHandler.handle();
                         } else {

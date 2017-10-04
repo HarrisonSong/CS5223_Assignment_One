@@ -1,27 +1,30 @@
 public class BackupLiveChecker implements Runnable {
 
     private PrimaryBackupPair primaryBackupPair;
+    private GameInterface localStub;
     private HandlerInterface unavailableHandler;
 
-    public BackupLiveChecker(PrimaryBackupPair primaryBackupPair, HandlerInterface handler) {
+    public BackupLiveChecker(PrimaryBackupPair primaryBackupPair, GameInterface localStub, HandlerInterface handler) {
         this.primaryBackupPair = primaryBackupPair;
+        this.localStub = localStub;
         this.unavailableHandler = handler;
     }
 
     @Override
     public void run() {
-        PingMaster pingMaster = new PingMaster(this.primaryBackupPair.getPirmaryStub());
-        try {
-            if(!pingMaster.isReachable()){
-                try {
-                    System.err.printf("Backup Ping Primary Fail: \n");
-                    this.unavailableHandler.handle();
-                } catch (Exception e) {
-                    //System.err.printf("background single ping error %s \n", e.getMessage());
+        if(!localStub.equals(this.primaryBackupPair.getPirmaryStub())){
+            PingMaster pingMaster = new PingMaster(this.primaryBackupPair.getPirmaryStub());
+            try {
+                if(!pingMaster.isReachable()){
+                    try {
+                        System.err.printf("BACKUP PING FAILURE: primary \n");
+                        this.unavailableHandler.handle();
+                    } catch (Exception e) {
+                    }
                 }
+            } catch (Throwable t){
+                System.err.println("Backup player found one player that is offline.");
             }
-        } catch (Throwable t){
-            System.err.println("Backup player found one player that is offline.");
         }
     }
 }

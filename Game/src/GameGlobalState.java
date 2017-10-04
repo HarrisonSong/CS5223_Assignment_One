@@ -156,11 +156,11 @@ public class GameGlobalState implements Serializable {
         try {
             if(!this.playersMap.containsKey(playerName)) return false;
             this.playersMap.get(playerName).setType(type);
+            changeSupport.firePropertyChange("PlayersMap", 1, 2);
+            return true;
         } finally {
             this.playersMapLock.writeLock().unlock();
         }
-        changeSupport.firePropertyChange("PlayersMap", 1, 2);
-        return true;
     }
 
     public Map<String, Player> getPlayersMap() {

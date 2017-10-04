@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Game implements GameInterface {
 
+    public static final int RETRY_WAITING_TIME = 1000;
     /**
      * static game global constants
      */
@@ -177,11 +178,11 @@ public class Game implements GameInterface {
                         if (isBackupAvailable) {
                             game.gameLocalState.setPrimaryStub(game.gameLocalState.getBackupStub());
                             try {
-                                TimeUnit.MILLISECONDS.sleep(1000);
+                                TimeUnit.MILLISECONDS.sleep(RETRY_WAITING_TIME);
                                 game.getGameLocalState().getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
                             } catch (Exception e1) {
                                 e1.printStackTrace();
-                                System.err.println("Detect both primary server and backup server fail within 2 seconds");
+                                System.err.println("INITIALIZE: Detect both primary server and backup server fail within 2 seconds");
                                 System.exit(0);
                             }
                         } else {
@@ -229,13 +230,8 @@ public class Game implements GameInterface {
             /**
              * Setup periodic ping to each player
              */
-            if(this.scheduler != null) {
-                this.scheduler.shutdown();
-            }
+            stopSchedulerAndTask();
             this.scheduler = Executors.newScheduledThreadPool(0);
-            if(this.backgroundScheduledTask != null) {
-                this.backgroundScheduledTask.cancel(false);
-            }
             this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
                     new PrimaryLiveChecker(
                             this.gameLocalState.getPrimaryBackupPair(),
@@ -245,7 +241,7 @@ public class Game implements GameInterface {
                     ),
                     500, 500, TimeUnit.MILLISECONDS
             );
-            System.out.println("!!!! "+this.getGameLocalState().getName()+" become Primary Now");
+            System.out.println("!!!! " + this.getGameLocalState().getName() + " become Primary Now");
             return true;
         }
         return false;
@@ -253,21 +249,15 @@ public class Game implements GameInterface {
 
     public boolean setupBackup(GameGlobalState updatedState){
         if(PlayerHelper.setupSelfAsBackup(this, updatedState)){
-            this.scheduler = Executors.newScheduledThreadPool(0);
-
             /**
              * Setup periodic ping to primary server
              */
-            if(this.scheduler != null) {
-                this.scheduler.shutdown();
-            }
+            stopSchedulerAndTask();
             this.scheduler = Executors.newScheduledThreadPool(0);
-            if(this.backgroundScheduledTask != null) {
-                this.backgroundScheduledTask.cancel(false);
-            }
             this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
                     new BackupLiveChecker(
                             this.gameLocalState.getPrimaryBackupPair(),
+                            this.gameLocalState.getLocalStub(),
                             () -> this.backupHandlePrimaryServerUnavailability()
                     ),
                     500, 500, TimeUnit.MILLISECONDS
@@ -280,25 +270,29 @@ public class Game implements GameInterface {
 
     public void setupStandard(GameGlobalState updatedState){
         PlayerHelper.setupSelfAsStandard(this, updatedState);
-        this.scheduler = Executors.newScheduledThreadPool(0);
         /**
          *  Setup periodic ping as a standard player
          */
-        if(this.scheduler != null) {
-            this.scheduler.shutdown();
-        }
+        stopSchedulerAndTask();
         this.scheduler = Executors.newScheduledThreadPool(0);
-        if(this.backgroundScheduledTask != null) {
-            this.backgroundScheduledTask.cancel(false);
-        }
         this.backgroundScheduledTask = this.scheduler.scheduleWithFixedDelay(
                 new StandardLiveChecker(
                         this.gameLocalState.getPrimaryBackupPair(),
+                        this.gameLocalState.getLocalStub(),
                         () -> this.standardPlayerHandlePrimaryServerUnavailability(),
                         () -> this.standardPlayerHandleBackupServerUnavailability()
                 ),
                 500, 500, TimeUnit.MILLISECONDS
         );
+    }
+
+    private void stopSchedulerAndTask(){
+        if(this.backgroundScheduledTask != null) {
+            this.backgroundScheduledTask.cancel(false);
+        }
+        if(this.scheduler != null) {
+            this.scheduler.shutdown();
+        }
     }
 
     /*** GameInterface Implementation ***/
@@ -330,7 +324,7 @@ public class Game implements GameInterface {
                  */
                 this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
             } catch (RemoteException e) {
-                System.out.println("Primary Server failed to contact Backup Server");
+                System.out.println("EXECUTE REMOTE REQUEST: Primary Server failed to contact Backup Server");
             }
         }
         return this.gameGlobalState;
@@ -352,7 +346,7 @@ public class Game implements GameInterface {
                 stub.playerPromoteAsBackup(this.gameGlobalState, this.gameLocalState.getPrimaryStub());
                 this.gameLocalState.setBackupStub(stub);
             } catch (RemoteException e) {
-                System.out.println("Primary Server failed to contact new assigned Backup Server");
+                System.out.println("EXECUTE JOIN: Primary Server failed to contact new assigned Backup Server");
                 this.gameGlobalState.removePlayerByName(playerName);
             }
         }else{
@@ -366,12 +360,14 @@ public class Game implements GameInterface {
                     /**
                      * Remote call backup server to update its global state
                      */
-                    this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+                    if(this.gameLocalState.getBackupStub() != null){
+                        this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+                    }
                 } catch (RemoteException e) {
-                    System.out.println("Primary Server failed to update Backup Server");
+                    System.out.println("EXECUTE JOIN: Primary Server failed to update Backup Server");
                 }
             } catch (RemoteException e) {
-                System.out.println("Primary Server failed to contact new Standard Player");
+                System.out.println("EXECUTE JOIN: Primary Server failed to contact new Standard Player");
                 this.gameGlobalState.removePlayerByName(playerName);
             }
         }
@@ -439,42 +435,45 @@ public class Game implements GameInterface {
     public void primaryHandleStandardPlayerUnavailability(String playerName){
         this.gameGlobalState.removePlayerByName(playerName);
         try {
-            this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+            if(this.gameLocalState.getBackupStub() != null){
+                this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+            }
         } catch (RemoteException e) {
-            System.err.println("Primary failed to contact backup.");
+            System.err.println("PRIMARY TO STANDARD HANDLER: Primary failed to update backup.");
         }
     }
 
     public void backupHandlePrimaryServerUnavailability(){
-        System.out.println("!!!!Found Primary is dead");
+        System.out.println("!!!! Backup found Primary is dead");
         String primaryPlayerName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
         this.gameGlobalState.removePlayerByName(primaryPlayerName);
         this.setupPrimary((this.gameGlobalState.getPlayerStubsMap().size() == 1));
         PrimaryServerHelper.assignBackupServer(this);
         PrimaryServerHelper.updateTrackerStubMap(this);
-
     }
 
     public void standardPlayerHandlePrimaryServerUnavailability(){
         try {
             /*** Wait for some time ***/
-            TimeUnit.MILLISECONDS.sleep(700);
+            TimeUnit.MILLISECONDS.sleep(RETRY_WAITING_TIME);
 
-            /*** Remove primary player ***/
-            String oldPrimaryName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
-            this.gameGlobalState.removePlayerByName(oldPrimaryName);
+            if(!this.gameLocalState.getPlayerType().equals(PlayerType.Backup)) {
+                /*** Remove primary player ***/
+                String oldPrimaryName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
+                this.gameGlobalState.removePlayerByName(oldPrimaryName);
 
-            try {
-                /*** Contact backup server ***/
-                System.out.println("contact backup server");
-                List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getBackupStub().getPrimaryAndBackupStubs();
-                this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
-                this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
-                this.gameGlobalState.updateServerPlayerType(primaryAndBackupStubs.get(0), primaryAndBackupStubs.get(1));
-            } catch (RemoteException e) {
-                e.printStackTrace();
-                System.out.println("Both primary and backup are offline");
-                System.exit(0);
+                try {
+                    /*** Contact backup server ***/
+                    System.out.println("contact backup server");
+                    List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getBackupStub().getPrimaryAndBackupStubs();
+                    this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
+                    this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
+                    this.gameGlobalState.updateServerPlayerType(primaryAndBackupStubs.get(0), primaryAndBackupStubs.get(1));
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                    System.out.println("STANDARD HANDLE PRIMARY FAIL: Both primary and backup are offline");
+                    System.exit(0);
+                }
             }
         } catch (InterruptedException e1) {
             System.err.println("System interrupted in standardPlayerHandlePrimaryServerUnavailability");
@@ -484,7 +483,7 @@ public class Game implements GameInterface {
     public void standardPlayerHandleBackupServerUnavailability(){
         try {
             /*** Wait for some time ***/
-            TimeUnit.MILLISECONDS.sleep(700);
+            TimeUnit.MILLISECONDS.sleep(RETRY_WAITING_TIME);
 
             if(!this.gameLocalState.getPlayerType().equals(PlayerType.Backup)) {
                 /*** Remove old backup player ***/
@@ -492,15 +491,15 @@ public class Game implements GameInterface {
                 this.gameGlobalState.removePlayerByName(oldBackupName);
 
                 try {
-                    System.out.println("contact primary server");
                     /*** Contact primary server ***/
+                    System.out.println("contact primary server");
                     List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getPrimaryStub().getPrimaryAndBackupStubs();
                     this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
                     this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
                     this.gameGlobalState.updateServerPlayerType(primaryAndBackupStubs.get(0), primaryAndBackupStubs.get(1));
                 } catch (RemoteException e) {
                     e.printStackTrace();
-                    System.out.println("Both primary and backup are offline");
+                    System.out.println("STANDARD HANDLE BACKUP FAIL: Both primary and backup are offline");
                     System.exit(0);
                 }
             }
