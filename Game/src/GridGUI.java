@@ -20,23 +20,23 @@ public class GridGUI implements PropertyChangeListener{
 
     private int N;
 
-    private GameGlobalState ggs;
+    private GameGlobalState globalState;
     public GridGUI(){}
 
-    public void initialization(GameGlobalState ggs, String name, int mazeSize){
-        this.ggs = ggs;
+    public void initialization(GameGlobalState globalState, String name, int mazeSize){
+        this.globalState = globalState;
         N = mazeSize;
 
         mainFrame = new JFrame(name);
-        mainFrame.setSize(1600,800);
+        mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        mainFrame.setSize(screenSize.width, screenSize.height);
         mainFrame.setLayout(new GridLayout(1, 2));
-
         mainFrame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent windowEvent){
                 System.exit(0);
             }
         });
-
 
         infoPanel = new JPanel();
         infoPanel.setLayout(new BorderLayout());
@@ -49,12 +49,13 @@ public class GridGUI implements PropertyChangeListener{
         columnNames.addElement("Type");
         infoTable = new DefaultTableModel(new Vector<>(), columnNames);
         JTable table = new JTable(infoTable);
+        table.setRowHeight(20);
+        table.setFont(new Font(table.getFont().getName(), Font.BOLD, 16));
         table.setEnabled(false);
         infoPanel.setLayout(new BorderLayout());
         infoPanel.add(table.getTableHeader(), BorderLayout.PAGE_START);
         infoPanel.add(table, BorderLayout.CENTER);
 
-        // right panel, the maze grid showing players and treasure location
         JPanel mazePanel = new JPanel();
         mazePanel.setLayout(new GridLayout(mazeSize, mazeSize, 0, 0));
         Border blackLine = BorderFactory.createLineBorder(Color.black);
@@ -71,15 +72,15 @@ public class GridGUI implements PropertyChangeListener{
         mainFrame.add(mazePanel);
         mainFrame.setVisible(true);
 
-        updateGlobalState();
-        ggs.addPropertyChangeListener(this);
+        UIUpdate();
+        globalState.addPropertyChangeListener(this);
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
-        System.out.println("Listening");
-        updateGlobalState();
+        System.out.println("Global state has changed");
+        UIUpdate();
         System.out.println("****** GUI Global State **********");
-        Map<String, Player> mm = ggs.getPlayersMap();
+        Map<String, Player> mm = globalState.getPlayersMap();
         for (Map.Entry<String, Player> entry : mm.entrySet()){
             System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
         }
@@ -87,37 +88,38 @@ public class GridGUI implements PropertyChangeListener{
     }
 
 
-    private void updateGlobalState(){
+    private void UIUpdate(){
         Vector infoVector = infoTable.getDataVector();
         infoVector.clear();
         clearMazeLabels();
-        Map<String, Player> playerMap = this.ggs.getPlayersMap();
-        List<mazePair> treasuresLocation = this.ggs.getTreasuresLocation();
+        Map<String, Player> playerMap = this.globalState.getPlayersMap();
+        List<MazePair> treasuresLocation = this.globalState.getTreasuresLocation();
         for (Map.Entry<String, Player> entry : playerMap.entrySet()) {
             Vector<Object> row = new Vector<>();
             row.addElement(entry.getKey());
             row.addElement(entry.getValue().getScore());
-            PlayerType pt = entry.getValue().getType();
-            if(pt!= PlayerType.Standard){
-                row.addElement(pt.toString());
-            } else {
+            PlayerType type = entry.getValue().getType();
+            if (type.equals(PlayerType.Standard)) {
                 row.addElement("");
+            } else {
+                row.addElement(type.toString());
             }
             infoVector.addElement(row);
         }
         infoTable.fireTableDataChanged();
 
-        for(int i = 0; i<treasuresLocation.size(); i++){
-            mazePair t = treasuresLocation.get(i);
-            String s = mazeLabels[N-1-t.getRow()][t.getColumn()].getText();
-            mazeLabels[N-1-t.getRow()][t.getColumn()].setText(s+"*");
+        for(int i = 0; i < treasuresLocation.size(); i++){
+            MazePair location = treasuresLocation.get(i);
+            String s = mazeLabels[N - 1 - location.getRow()][location.getColumn()].getText();
+            mazeLabels[N - 1 - location.getRow()][location.getColumn()].setText(s + "*");
         }
         for (Map.Entry<String, Player> entry : playerMap.entrySet()) {
-            mazePair t= entry.getValue().getCurrentPosition();
-            String s = mazeLabels[N-1-t.getRow()][t.getColumn()].getText();
-            mazeLabels[N-1-t.getRow()][t.getColumn()].setText(s+entry.getKey());
+            MazePair location = entry.getValue().getCurrentPosition();
+            String s = mazeLabels[N - 1 -location.getRow()][location.getColumn()].getText();
+            mazeLabels[N - 1 - location.getRow()][location.getColumn()].setText(s + entry.getKey());
         }
 
+        mazePanel.repaint();
     }
 
     private void clearMazeLabels(){

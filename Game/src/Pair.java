@@ -32,7 +32,7 @@ public class Pair<T, V> implements Serializable {
     public boolean equals(Object obj) {
         if(obj == null){return false;}
         if(obj == this) {return true;}
-        if(!(obj instanceof mazePair)){return false;}
+        if(!(obj instanceof MazePair)){return false;}
         if(((Pair) obj).a.equals(this.a) && ((Pair) obj).b.equals(this.b)) {return true;}
         else{return false;}
     }

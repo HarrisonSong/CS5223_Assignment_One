@@ -3,22 +3,22 @@ import java.io.Serializable;
 public class Player implements Serializable {
 
     private String name;
-    private mazePair currentPosition = new mazePair();
+    private MazePair currentPosition = new MazePair();
     private int score = 0;
     private PlayerType type = PlayerType.Standard;
 
-    public Player(String name, mazePair currentPosition, int score, PlayerType type) {
+    public Player(String name, MazePair currentPosition, int score, PlayerType type) {
         this.name = name;
         this.currentPosition = currentPosition;
         this.score = score;
         this.type = type;
     }
 
-    public mazePair getCurrentPosition() {
-        return new mazePair(currentPosition.getRow(), currentPosition.getColumn());
+    public MazePair getCurrentPosition() {
+        return new MazePair(currentPosition.getRow(), currentPosition.getColumn());
     }
 
-    public void setCurrentPosition(mazePair currentPosition) {
+    public void setCurrentPosition(MazePair currentPosition) {
         this.currentPosition = currentPosition;
     }
 
@@ -38,7 +38,7 @@ public class Player implements Serializable {
         this.type = type;
     }
 
-    public boolean isAtCell(mazePair location){ return this.currentPosition.equals(location);}
+    public boolean isAtCell(MazePair location){ return this.currentPosition.equals(location);}
 
     public void showWhereIAm(){
         System.out.printf(

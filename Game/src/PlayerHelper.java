@@ -110,7 +110,7 @@ public class PlayerHelper {
                     game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
                 }else{
                     try {
-                        TimeUnit.MILLISECONDS.sleep(1300);
+                        TimeUnit.MILLISECONDS.sleep(1000);
                         if(!game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
                             List<GameInterface> serverList = game.getGameLocalState().getBackupStub().getPrimaryAndBackupStubs();
                             game.getGameLocalState().setPrimaryStub(serverList.get(0));

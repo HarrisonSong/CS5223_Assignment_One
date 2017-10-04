@@ -12,7 +12,7 @@ public class GameGlobalState implements Serializable {
 
     private Map<String, Player> playersMap;
     private Map<String, GameInterface> playerStubsMap;
-    private List<mazePair> treasuresLocation;
+    private List<MazePair> treasuresLocation;
 
     private ReadWriteLock playersMapLock;
     private ReadWriteLock playerStubsMapLock;
@@ -48,7 +48,7 @@ public class GameGlobalState implements Serializable {
         this.treasuresLocationLock.writeLock().lock();
         try{
             Player targetPlayer = this.playersMap.get(playerName);
-            mazePair currentLocation = targetPlayer.getCurrentPosition();
+            MazePair currentLocation = targetPlayer.getCurrentPosition();
             if(targetPlayer == null) return false;
             switch (command){
                 case West:
@@ -70,7 +70,7 @@ public class GameGlobalState implements Serializable {
                 targetPlayer.setCurrentPosition(currentLocation);
                 targetPlayer.showWhereIAm();
                 int treasures = findTreasuresAtLocation(currentLocation);
-                if(treasures!=-1){
+                if(treasures != -1){
                     targetPlayer.setScore(targetPlayer.getScore() + 1);
                     generateNewTreasures(treasures);
                 }
@@ -84,7 +84,7 @@ public class GameGlobalState implements Serializable {
         return true;
     }
 
-    public void resetAllStates(Map<String, Player> playersMap, Map<String, GameInterface> playerStubsMap, List<mazePair> treasuresLocation){
+    public void resetAllStates(Map<String, Player> playersMap, Map<String, GameInterface> playerStubsMap, List<MazePair> treasuresLocation){
 
         System.out.println("Reset all states ----------------------");
         this.playersMapLock.writeLock().lock();
@@ -100,50 +100,61 @@ public class GameGlobalState implements Serializable {
             this.playersMapLock.writeLock().unlock();
         }
         changeSupport.firePropertyChange("PlayersMap", 1, 2);
-        //changeSupport.firePropertyChange("TreasureList", 1, 2);
+    }
 
+    public boolean addPlayer(String playerName, PlayerType type, GameInterface stub){
+        this.playersMapLock.writeLock().lock();
+        this.playerStubsMapLock.writeLock().lock();
+        try {
+            if(this.playersMap.containsKey(playerName)) return false;
+            while(true) {
+                MazePair newLocation = new MazePair(this.mazeSize);
+                if (!isLocationAccessible(newLocation) || hasTreasureLocatedAt(newLocation)) continue;
+                Player newPlayer = new Player(playerName, newLocation, 0, type);
+                newPlayer.showWhereIAm();
+                this.playersMap.put(playerName, newPlayer);
+                this.playerStubsMap.put(playerName, stub);
+
+                changeSupport.firePropertyChange("PlayersMap", 1, 2);
+                return true;
+            }
+        } finally {
+            this.playerStubsMapLock.writeLock().unlock();
+            this.playersMapLock.writeLock().unlock();
+        }
+    }
+
+    public boolean removePlayerByName(String playerName){
+        this.playersMapLock.writeLock().lock();
+        this.playerStubsMapLock.writeLock().lock();
+        try {
+            if(!this.playersMap.containsKey(playerName)) return false;
+
+            this.playersMap.remove(playerName);
+            this.playerStubsMap.remove(playerName);
+
+            changeSupport.firePropertyChange("PlayersMap", 1, 2);
+            return true;
+        } finally {
+            this.playerStubsMapLock.writeLock().unlock();
+            this.playersMapLock.writeLock().unlock();
+        }
     }
 
     /*** PlayerMap methods ***/
+
+    public void updateServerPlayerType(GameInterface primaryStub, GameInterface backupStub){
+        String updatedPrimaryName = this.getPlayerNameByStub(primaryStub);
+        String updatedBackupName = this.getPlayerNameByStub(backupStub);
+        this.updatePlayerType(updatedPrimaryName, PlayerType.Primary);
+        this.updatePlayerType(updatedBackupName, PlayerType.Backup);
+    }
 
     public boolean updatePlayerType(String playerName, PlayerType type){
         this.playersMapLock.writeLock().lock();
         try {
             if(!this.playersMap.containsKey(playerName)) return false;
             this.playersMap.get(playerName).setType(type);
-        } finally {
-            this.playersMapLock.writeLock().unlock();
-        }
-        changeSupport.firePropertyChange("PlayersMap", 1, 2);
-        return true;
-    }
-
-    public boolean addNewPlayerWithName(String playerName, PlayerType type){
-        this.playersMapLock.writeLock().lock();
-        try {
-            if(this.playersMap.containsKey(playerName)) return false;
-            while(true) {
-                mazePair newLocation = new mazePair(this.mazeSize);
-                if (!isLocationAccessible(newLocation) || hasTreasureLocatedAt(newLocation)) continue;
-                Player newPlayer = new Player(playerName, newLocation, 0, type);
-                newPlayer.showWhereIAm();
-                this.playersMap.put(playerName, newPlayer);
-                return true;
-            }
-        } finally {
-            changeSupport.firePropertyChange("PlayersMap", 1, 2);
-            this.playersMapLock.writeLock().unlock();
-
-        }
-
-    }
-
-    public boolean removePlayerByName(String playerName){
-        this.playersMapLock.writeLock().lock();
-        try {
-            if(!this.playersMap.containsKey(playerName)) return false;
-
-            this.playersMap.remove(playerName);
         } finally {
             this.playersMapLock.writeLock().unlock();
         }
@@ -160,9 +171,9 @@ public class GameGlobalState implements Serializable {
         }
     }
 
-    /*** PlayerStubMap methods ***/
+    /*** treasures methods ***/
 
-    public List<mazePair> getTreasuresLocation() {
+    public List<MazePair> getTreasuresLocation() {
         this.treasuresLocationLock.readLock().lock();
         try {
             return this.treasuresLocation;
@@ -182,6 +193,15 @@ public class GameGlobalState implements Serializable {
         }
     }
 
+    public void setPlayerStubsMap(Map<String, GameInterface> playerStubsMap) {
+        this.playerStubsMapLock.writeLock().lock();
+        try {
+            this.playerStubsMap = playerStubsMap;
+        } finally {
+            this.playerStubsMapLock.writeLock().unlock();
+        }
+    }
+
     public String getPlayerNameByStub(GameInterface targetStub) {
         this.playerStubsMapLock.readLock().lock();
         try {
@@ -196,49 +216,22 @@ public class GameGlobalState implements Serializable {
         }
     }
 
-    public void setPlayerStubsMap(Map<String, GameInterface> playerStubsMap) {
-        this.playerStubsMapLock.writeLock().lock();
-        try {
-            this.playerStubsMap = playerStubsMap;
-        } finally {
-            this.playerStubsMapLock.writeLock().unlock();
-        }
-    }
-
-    public void addPlayerStub(String playName, GameInterface Stub){
-        this.playerStubsMapLock.writeLock().lock();
-        try {
-            this.playerStubsMap.put(playName, Stub);
-        } finally {
-            this.playerStubsMapLock.writeLock().unlock();
-        }
-    }
-
-    public void removePlayerStubByName(String playName){
-        this.playerStubsMapLock.writeLock().lock();
-        try {
-            this.playerStubsMap.remove(playName);
-        } finally {
-            this.playerStubsMapLock.writeLock().unlock();
-        }
-    }
-
     /*** Helper methods ***/
 
-    private boolean isLocationAccessible(mazePair location) {
+    private boolean isLocationAccessible(MazePair location) {
         return location.isValid() && !doesPlayerExistAtLocation(location);
     }
 
-    private boolean hasTreasureLocatedAt(mazePair mp){
+    private boolean hasTreasureLocatedAt(MazePair mazePair){
         for(int i = 0; i < this.treasuresLocation.size(); i++){
-            if(mp.equals(this.treasuresLocation.get(i))){
+            if(mazePair.equals(this.treasuresLocation.get(i))){
                 return true;
             }
         }
         return false;
     }
 
-    private boolean doesPlayerExistAtLocation(mazePair location) {
+    private boolean doesPlayerExistAtLocation(MazePair location) {
         for(Player player : this.playersMap.values()){
             if(player.isAtCell(location)){
                 return true;
@@ -247,7 +240,7 @@ public class GameGlobalState implements Serializable {
         return false;
     }
 
-    private int findTreasuresAtLocation(mazePair location) {
+    private int findTreasuresAtLocation(MazePair location) {
         int result = -1;
         for(int i = 0; i < this.treasuresSize; i++) {
             if(treasuresLocation.get(i).equals(location)) {
@@ -259,33 +252,22 @@ public class GameGlobalState implements Serializable {
     }
 
     private void generateNewTreasures(int index) {
-        mazePair mp;
+        MazePair mazePair;
         while(treasuresLocation.size()<= index) {
-            treasuresLocation.add(new mazePair(this.mazeSize));
+            treasuresLocation.add(new MazePair(this.mazeSize));
         }
         while(true){
-            mp = new mazePair(this.mazeSize);
-            if(!isLocationAccessible(mp) || hasTreasureLocatedAt(mp)) continue;
-            this.treasuresLocation.set(index, mp);
+            mazePair = new MazePair(this.mazeSize);
+            if(!isLocationAccessible(mazePair) || hasTreasureLocatedAt(mazePair)) continue;
+            this.treasuresLocation.set(index, mazePair);
             break;
-
         }
 
-        changeSupport.firePropertyChange("TreasureList",1, 2);
-
+        this.changeSupport.firePropertyChange("TreasureList",1, 2);
     }
 
     public void addPropertyChangeListener(PropertyChangeListener l) {
         changeSupport.addPropertyChangeListener(l);
-    }
-
-    public void removePropertyChangeListener(PropertyChangeListener l) {
-        changeSupport.removePropertyChangeListener(l);
-    }
-
-    public void GameGlobalStateRefreshListener(){
-        changeSupport.firePropertyChange("PlayersMap", 1, 2);
-        //changeSupport.firePropertyChange("TreasureList", 1, 2);
     }
 }
 

@@ -1,9 +1,9 @@
 import java.util.concurrent.ThreadLocalRandom;
 
-public class mazePair extends Pair<Integer, Integer> {
+public class MazePair extends Pair<Integer, Integer> {
 
 
-    public mazePair(){
+    public MazePair(){
         super();
     }
 
@@ -11,11 +11,11 @@ public class mazePair extends Pair<Integer, Integer> {
      * construct a point in the range between (0,0) and (max, max)
      * @param max
      */
-    public mazePair(int max) {
+    public MazePair(int max) {
         super(ThreadLocalRandom.current().nextInt(0, max), ThreadLocalRandom.current().nextInt(0, max));
     }
 
-    public mazePair(int row, int column) {
+    public MazePair(int row, int column) {
         super(row, column);
     }
 
