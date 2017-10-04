@@ -1,7 +1,3 @@
-//package Interface;
-
-//import Interface.GameInterface;
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Map;

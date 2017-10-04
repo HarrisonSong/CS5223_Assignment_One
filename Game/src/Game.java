@@ -47,7 +47,6 @@ public class Game implements GameInterface {
      * @param args
      */
     public static void main(String args[]) {
-        //System.setProperty("java.security.policy","file:///home/.../<filename>.policy");
         String trackerIP = "";
         int trackerPort = 0;
         String playerName = "";
@@ -172,11 +171,8 @@ public class Game implements GameInterface {
                     GameGlobalState updatedState = null;
                     try {
                         updatedState = (GameGlobalState) game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
-                        System.out.println("@@@ " + updatedState.getBackUpName());
-                        /**
-                         * Current user is promoted by primary as backup already
-                         */
-                        isBackupAvailable = !updatedState.getBackUpName().equals(playerName);
+                        //System.out.println("@@@ " + updatedState.getBackUpName());
+                        //isBackupAvailable = !updatedState.getBackUpName().equals(playerName);
                     } catch (RemoteException e) {
                         /**
                          * The primary server is offline at the time.
@@ -231,7 +227,7 @@ public class Game implements GameInterface {
              * Continuously launch GUI read user input from
              * standard input.
              */
-            //game.gui.initialization(game.getGameGlobalState(), game.getGameLocalState().getName(), MazeSize);
+            game.gui.initialization(game.getGameGlobalState(), game.getGameLocalState().getName(), MazeSize);
             Scanner inputScanner = new Scanner(System.in);
             while (inputScanner.hasNext()) {
                 PlayerHelper.issueRequest(inputScanner.nextLine(), game);
@@ -298,6 +294,7 @@ public class Game implements GameInterface {
     }
 
     public void setupStandard(GameGlobalState updatedState){
+        System.out.println("Setup Standard");
         PlayerHelper.setupSelfAsStandard(this, updatedState);
         this.scheduler = Executors.newScheduledThreadPool(0);
         /**
@@ -364,24 +361,30 @@ public class Game implements GameInterface {
      */
     public Object primaryExecuteJoin(String playerName, GameInterface stub){
         if(this.gameGlobalState.getPlayerStubsMap().size() == 1){
+            this.gameGlobalState.addPlayerStub(playerName, stub);
             this.gameGlobalState.addNewPlayerWithName(playerName, PlayerType.Backup);
-
             /**
              * setup the stub to be backup server
              */
-            this.gameLocalState.setBackupStub(stub);
+            try {
+                stub.playerPromoteAsBackup(this.gameGlobalState, this.gameLocalState.getPrimaryStub());
+                this.gameLocalState.setBackupStub(stub);
+            } catch (RemoteException e) {
+                System.out.println("Primary Server failed to contact new assigned Backup Server");
+                this.gameGlobalState.removePlayerByName(playerName);
+                this.gameGlobalState.removePlayerStubByName(playerName);
+            }
         }else{
+            this.gameGlobalState.addPlayerStub(playerName, stub);
             this.gameGlobalState.addNewPlayerWithName(playerName, PlayerType.Standard);
-        }
-        this.gameGlobalState.addPlayerStub(playerName, stub);
-
-        try {
-            /**
-             * Remote call backup server to update its global state
-             */
-            this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
-        } catch (RemoteException e) {
-            System.out.println("Primary Server failed to contact Backup Server");
+            try {
+                /**
+                 * Remote call backup server to update its global state
+                 */
+                this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+            } catch (RemoteException e) {
+                System.out.println("Primary Server failed to contact Backup Server");
+            }
         }
         return this.gameGlobalState;
     }
@@ -466,9 +469,11 @@ public class Game implements GameInterface {
 
             try {
                 /*** Contact backup server ***/
+                System.out.println("contact backup server");
                 List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getBackupStub().getPrimaryAndBackupStubs();
                 this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
                 this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
+                PlayerHelper.issueRequest("0", this);
             } catch (RemoteException e) {
                 System.out.println("Both primary and backup are offline");
                 System.exit(0);
@@ -484,10 +489,12 @@ public class Game implements GameInterface {
             TimeUnit.MILLISECONDS.sleep(700);
 
             try {
+                System.out.println("contact primary server");
                 /*** Contact primary server ***/
                 List<GameInterface> primaryAndBackupStubs = this.gameLocalState.getPrimaryStub().getPrimaryAndBackupStubs();
                 this.gameLocalState.setPrimaryStub(primaryAndBackupStubs.get(0));
                 this.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
+                PlayerHelper.issueRequest("0", this);
             } catch (RemoteException e) {
                 System.out.println("Both primary and backup are offline");
                 System.exit(0);

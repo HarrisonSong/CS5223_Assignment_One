@@ -1,7 +1,3 @@
-//package Game.BackgroundPing;
-//
-//import Common.PrimaryBackupPair;
-
 public class StandardLiveChecker implements Runnable {
 
     private PrimaryBackupPair primaryBackupPair;

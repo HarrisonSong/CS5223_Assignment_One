@@ -1,10 +1,3 @@
-//package Game.State;
-//
-//import Common.PrimaryBackupPair;
-//import Game.Player.PlayerType;
-//import Interface.GameInterface;
-//import Interface.TrackerInterface;
-
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 

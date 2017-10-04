@@ -1,6 +1,3 @@
-//package Common;
-//
-//import Game.Game;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class mazePair extends Pair<Integer, Integer> {

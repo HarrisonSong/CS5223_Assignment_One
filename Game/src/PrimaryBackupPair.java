@@ -1,7 +1,3 @@
-//package Common;
-
-//import GameInterface;
-
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 

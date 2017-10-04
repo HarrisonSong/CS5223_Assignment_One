@@ -1,7 +1,3 @@
-//package Game.BackgroundPing;
-//
-//import Interface.GameInterface;
-
 import java.rmi.RemoteException;
 
 public class PingMaster {

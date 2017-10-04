@@ -1,6 +1,3 @@
-//package Game.Player;
-//import Common.mazePair;
-
 import java.io.Serializable;
 
 public class Player implements Serializable {

@@ -1,5 +1,3 @@
-//package Common;
-
 import java.io.Serializable;
 
 public class Pair<T, V> implements Serializable {

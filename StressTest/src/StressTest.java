@@ -74,11 +74,11 @@ public class StressTest {
         Scanner scan = new Scanner(System.in);
         int step = 0;
 
-        while (step < 200) {
+        while (step < 1000) {
             step++;
             System.out.println("Current step is " + step);
             if ((step == 5) || (step == 30) || (step == 40) || (step == 60)
-                    || (step == 200)) {
+                    || (step == 200) || (step == 400) || (step == 600) || (step == 800) || (step == 1000)) {
                 System.out.println("######### Checkpoint at step " + step
                         + " #########");
                 doSlowMoves(allPlayers, random, scan);

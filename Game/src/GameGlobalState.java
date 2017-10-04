@@ -160,20 +160,6 @@ public class GameGlobalState implements Serializable {
         }
     }
 
-    public String getBackUpName(){
-        this.playersMapLock.readLock().lock();
-        try {
-            for(Map.Entry<String, Player> entry : this.playersMap.entrySet()) {
-                if (entry.getValue().getType().equals(PlayerType.Backup)) {
-                    return entry.getKey();
-                }
-            }
-            return "";
-        } finally {
-            this.playersMapLock.readLock().unlock();
-        }
-    }
-
     /*** PlayerStubMap methods ***/
 
     public List<mazePair> getTreasuresLocation() {

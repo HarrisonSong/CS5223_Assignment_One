@@ -1,5 +1,3 @@
-//package Game.Player;
-
 public enum Command {
     Invalid("-1"),
     Refresh("0"),
