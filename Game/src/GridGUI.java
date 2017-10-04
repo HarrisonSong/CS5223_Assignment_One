@@ -25,6 +25,7 @@ public class GridGUI implements PropertyChangeListener{
     public GridGUI(){}
 
     public void initialization(GameGlobalState globalState, String name, int mazeSize){
+        System.out.println("Player " + name + " starts initializing the UI.");
         this.globalState = globalState;
         N = mazeSize;
 
@@ -72,6 +73,8 @@ public class GridGUI implements PropertyChangeListener{
         mainFrame.add(infoPanel);
         mainFrame.add(mazePanel);
         mainFrame.setVisible(true);
+
+        System.out.println("Player " + name + " has launched the UI.");
 
         UIUpdate();
         globalState.addPropertyChangeListener(this);

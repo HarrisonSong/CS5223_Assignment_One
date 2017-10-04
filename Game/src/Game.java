@@ -463,7 +463,6 @@ public class Game implements GameInterface {
             /*** Remove primary player ***/
             String oldPrimaryName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getPrimaryStub());
             this.gameGlobalState.removePlayerByName(oldPrimaryName);
-            this.gameLocalState.setPrimaryStub(null);
 
             try {
                 /*** Contact backup server ***/
@@ -491,7 +490,6 @@ public class Game implements GameInterface {
                 /*** Remove old backup player ***/
                 String oldBackupName = this.gameGlobalState.getPlayerNameByStub(this.gameLocalState.getBackupStub());
                 this.gameGlobalState.removePlayerByName(oldBackupName);
-                this.gameLocalState.setBackupStub(null);
 
                 try {
                     System.out.println("contact primary server");
