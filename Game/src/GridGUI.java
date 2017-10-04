@@ -2,6 +2,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -92,31 +93,32 @@ public class GridGUI implements PropertyChangeListener{
         Vector infoVector = infoTable.getDataVector();
         infoVector.clear();
         clearMazeLabels();
-        Map<String, Player> playerMap = this.globalState.getPlayersMap();
+
         List<MazePair> treasuresLocation = this.globalState.getTreasuresLocation();
-        for (Map.Entry<String, Player> entry : playerMap.entrySet()) {
+        for(int i = 0; i < treasuresLocation.size(); i++){
+            MazePair location = treasuresLocation.get(i);
+            String s = mazeLabels[N - 1 - location.getRow()][location.getColumn()].getText();
+            mazeLabels[N - 1 - location.getRow()][location.getColumn()].setText(s + "*");
+        }
+
+        Iterator<Map.Entry<String, Player>> playerMapIterator = this.globalState.getPlayersMap().entrySet().iterator();
+        while(playerMapIterator.hasNext()){
+            Map.Entry<String, Player> entryNext = playerMapIterator.next();
+
+            MazePair location = entryNext.getValue().getCurrentPosition();
+            String s = mazeLabels[N - 1 -location.getRow()][location.getColumn()].getText();
+            mazeLabels[N - 1 - location.getRow()][location.getColumn()].setText(s + entryNext.getKey());
+
             Vector<Object> row = new Vector<>();
-            row.addElement(entry.getKey());
-            row.addElement(entry.getValue().getScore());
-            PlayerType type = entry.getValue().getType();
+            row.addElement(entryNext.getKey());
+            row.addElement(entryNext.getValue().getScore());
+            PlayerType type = entryNext.getValue().getType();
             if (type.equals(PlayerType.Standard)) {
                 row.addElement("");
             } else {
                 row.addElement(type.toString());
             }
             infoVector.addElement(row);
-        }
-        infoTable.fireTableDataChanged();
-
-        for(int i = 0; i < treasuresLocation.size(); i++){
-            MazePair location = treasuresLocation.get(i);
-            String s = mazeLabels[N - 1 - location.getRow()][location.getColumn()].getText();
-            mazeLabels[N - 1 - location.getRow()][location.getColumn()].setText(s + "*");
-        }
-        for (Map.Entry<String, Player> entry : playerMap.entrySet()) {
-            MazePair location = entry.getValue().getCurrentPosition();
-            String s = mazeLabels[N - 1 -location.getRow()][location.getColumn()].getText();
-            mazeLabels[N - 1 - location.getRow()][location.getColumn()].setText(s + entry.getKey());
         }
 
         mazePanel.repaint();

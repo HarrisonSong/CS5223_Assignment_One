@@ -2,6 +2,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -23,8 +24,8 @@ public class GameGlobalState implements Serializable {
     public GameGlobalState(int mazeSize, int treasuresSize) {
         this.mazeSize = mazeSize;
         this.treasuresSize = treasuresSize;
-        this.playersMap = new HashMap<>();
-        this.playerStubsMap = new HashMap<>();
+        this.playersMap = new ConcurrentHashMap<>();
+        this.playerStubsMap = new ConcurrentHashMap<>();
         this.treasuresLocation = new ArrayList<>(treasuresSize);
         for(int i = 0; i < treasuresSize; i++) {
             generateNewTreasures(i);
