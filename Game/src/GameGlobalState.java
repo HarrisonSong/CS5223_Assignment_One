@@ -2,7 +2,6 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -24,8 +23,8 @@ public class GameGlobalState implements Serializable {
     public GameGlobalState(int mazeSize, int treasuresSize) {
         this.mazeSize = mazeSize;
         this.treasuresSize = treasuresSize;
-        this.playersMap = new ConcurrentHashMap<>();
-        this.playerStubsMap = new ConcurrentHashMap<>();
+        this.playersMap = new HashMap<>();
+        this.playerStubsMap = new HashMap<>();
         this.treasuresLocation = new ArrayList<>(treasuresSize);
         for(int i = 0; i < treasuresSize; i++) {
             generateNewTreasures(i);
@@ -167,6 +166,34 @@ public class GameGlobalState implements Serializable {
         this.playersMapLock.readLock().lock();
         try {
             return playersMap;
+        } finally {
+            this.playersMapLock.readLock().unlock();
+        }
+    }
+
+    public Map<String, Player> getPlayersMapCopy() {
+        this.playersMapLock.readLock().lock();
+        try {
+            return new HashMap<>(playersMap);
+        } finally {
+            this.playersMapLock.readLock().unlock();
+        }
+    }
+
+    public String getNameOfSpecialType(PlayerType type) {
+        if(type.equals(PlayerType.Standard)){
+            return null;
+        }
+        this.playersMapLock.readLock().lock();
+        try {
+            Iterator<Map.Entry<String, Player>> iterator = playersMap.entrySet().iterator();
+            while(iterator.hasNext()){
+                Map.Entry<String, Player> entry = iterator.next();
+                if(entry.getValue().getType().equals(type)){
+                    return entry.getKey();
+                }
+            }
+            return null;
         } finally {
             this.playersMapLock.readLock().unlock();
         }

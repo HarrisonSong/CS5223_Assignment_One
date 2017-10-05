@@ -16,7 +16,7 @@ public class GridGUI implements PropertyChangeListener{
     private JPanel infoPanel;
     private JPanel mazePanel;
 
-    private DefaultTableModel infoTable;
+    private DefaultTableModel infoTableModel;
     JLabel[][] mazeLabels;
 
     private int N;
@@ -25,7 +25,6 @@ public class GridGUI implements PropertyChangeListener{
     public GridGUI(){}
 
     public void initialization(GameGlobalState globalState, String name, int mazeSize){
-        System.out.println("Player " + name + " starts initializing the UI.");
         this.globalState = globalState;
         N = mazeSize;
 
@@ -45,12 +44,8 @@ public class GridGUI implements PropertyChangeListener{
         mazePanel = new JPanel();
         mazePanel.setLayout(new BorderLayout());
 
-        Vector<String> columnNames = new Vector<>();
-        columnNames.addElement("Player");
-        columnNames.addElement("Score");
-        columnNames.addElement("Type");
-        infoTable = new DefaultTableModel(new Vector<>(), columnNames);
-        JTable table = new JTable(infoTable);
+        infoTableModel = new DefaultTableModel(new Vector(), getColumnNameVector());
+        JTable table = new JTable(infoTableModel);
         table.setRowHeight(20);
         table.setFont(new Font(table.getFont().getName(), Font.BOLD, 16));
         table.setEnabled(false);
@@ -72,38 +67,42 @@ public class GridGUI implements PropertyChangeListener{
 
         mainFrame.add(infoPanel);
         mainFrame.add(mazePanel);
-        UIUpdate();
 
+        mainFrame.setLocationRelativeTo(null);
         mainFrame.setVisible(true);
         globalState.addPropertyChangeListener(this);
 
-        System.out.println("Player " + name + " has launched the UI.");
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            UIUpdate();
+        });
     }
 
     public void propertyChange(PropertyChangeEvent evt) {
-        System.out.println("Global state has changed");
-        UIUpdate();
-        System.out.println("****** GUI Global State **********");
-        Map<String, Player> mm = globalState.getPlayersMap();
-        for (Map.Entry<String, Player> entry : mm.entrySet()){
-            System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            UIUpdate();
+        });
+        System.out.println("****** Latest Players State **********");
+        for (Map.Entry<String, Player> entry : globalState.getPlayersMap().entrySet()){
+            System.out.printf(entry.getKey() + " [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn() + "]\n");
         }
         System.out.println("*****************");
     }
 
     private void UIUpdate(){
-        Vector infoVector = infoTable.getDataVector();
-        infoVector.clear();
+        infoTableModel.setNumRows(0);
+        infoTableModel.setRowCount(0);
+        infoTableModel.fireTableDataChanged();
         clearMazeLabels();
 
         List<MazePair> treasuresLocation = this.globalState.getTreasuresLocation();
+
         for(int i = 0; i < treasuresLocation.size(); i++){
             MazePair location = treasuresLocation.get(i);
             String s = mazeLabels[N - 1 - location.getRow()][location.getColumn()].getText();
             mazeLabels[N - 1 - location.getRow()][location.getColumn()].setText(s + "*");
         }
 
-        Iterator<Map.Entry<String, Player>> playerMapIterator = this.globalState.getPlayersMap().entrySet().iterator();
+        Iterator<Map.Entry<String, Player>> playerMapIterator = this.globalState.getPlayersMapCopy().entrySet().iterator();
         while(playerMapIterator.hasNext()){
             Map.Entry<String, Player> entryNext = playerMapIterator.next();
 
@@ -120,8 +119,9 @@ public class GridGUI implements PropertyChangeListener{
             } else {
                 row.addElement(type.toString());
             }
-            infoVector.addElement(row);
+            infoTableModel.addRow(row);
         }
+        infoTableModel.fireTableDataChanged();
 
         mainFrame.revalidate();
         mainFrame.repaint();
@@ -133,5 +133,13 @@ public class GridGUI implements PropertyChangeListener{
                 mazeLabels[i][j].setText("");
             }
         }
+    }
+
+    private Vector<String> getColumnNameVector(){
+        Vector<String> columnNames = new Vector<>();
+        columnNames.addElement("Player");
+        columnNames.addElement("Score");
+        columnNames.addElement("Type");
+        return columnNames;
     }
 }

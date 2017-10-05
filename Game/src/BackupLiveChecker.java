@@ -23,7 +23,6 @@ public class BackupLiveChecker implements Runnable {
                     }
                 }
             } catch (Throwable t){
-                System.err.println("Backup player found one player that is offline.");
             }
         }
     }

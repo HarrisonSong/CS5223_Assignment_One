@@ -40,7 +40,6 @@ public class PrimaryLiveChecker implements Runnable {
                 }
             }
         } catch (Throwable t){
-            System.err.println("Primary player found one player that is offline.");
         }
     }
 }

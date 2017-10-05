@@ -28,7 +28,6 @@ public class StandardLiveChecker implements Runnable {
                 this.standardToBackupHandler.handle();
             }
         } catch (Throwable t){
-            System.err.println("Standard player found one player that is offline.");
         }
     }
 }

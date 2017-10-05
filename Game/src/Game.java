@@ -170,22 +170,16 @@ public class Game implements GameInterface {
                     game.gameLocalState.setBackupStub(primaryAndBackupStubs.get(1));
                     boolean isBackupAvailable = primaryAndBackupStubs.get(1) != null;
                     try {
-                        game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                        if(game.gameLocalState.getPrimaryStub() != null){
+                            game.gameLocalState.getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
+                        }else if(!game.waitForBackupPromoteAndJoin(isBackupAvailable, playerName)) {
+                            break;
+                        }
                     } catch (RemoteException e) {
                         /**
                          * The primary server is offline at the time.
                          */
-                        if (isBackupAvailable) {
-                            game.gameLocalState.setPrimaryStub(game.gameLocalState.getBackupStub());
-                            try {
-                                TimeUnit.MILLISECONDS.sleep(RETRY_WAITING_TIME);
-                                game.getGameLocalState().getPrimaryStub().primaryExecuteJoin(playerName, game.gameLocalState.getLocalStub());
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                                System.err.println("INITIALIZE: Detect both primary server and backup server fail within 2 seconds");
-                                System.exit(0);
-                            }
-                        } else {
+                        if (!game.waitForBackupPromoteAndJoin(isBackupAvailable, playerName)) {
                             break;
                         }
                     }
@@ -222,76 +216,6 @@ public class Game implements GameInterface {
             System.err.println("Failed to register.");
             System.exit(0);
             return;
-        }
-    }
-
-    public boolean setupPrimary(boolean isTheOnlyPlayer){
-        if (PlayerHelper.setupSelfAsPrimary(this, isTheOnlyPlayer)){
-            /**
-             * Setup periodic ping to each player
-             */
-            stopSchedulerAndTask();
-            this.scheduler = Executors.newScheduledThreadPool(0);
-            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
-                    new PrimaryLiveChecker(
-                            this.gameLocalState.getPrimaryBackupPair(),
-                            this.gameGlobalState.getPlayerStubsMap(),
-                            () -> this.primaryHandleBackupServerUnavailability(),
-                            (name) -> this.primaryHandleStandardPlayerUnavailability(name)
-                    ),
-                    500, 500, TimeUnit.MILLISECONDS
-            );
-            System.out.println("!!!! " + this.getGameLocalState().getName() + " become Primary Now");
-            return true;
-        }
-        return false;
-    }
-
-    public boolean setupBackup(GameGlobalState updatedState){
-        if(PlayerHelper.setupSelfAsBackup(this, updatedState)){
-            /**
-             * Setup periodic ping to primary server
-             */
-            stopSchedulerAndTask();
-            this.scheduler = Executors.newScheduledThreadPool(0);
-            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
-                    new BackupLiveChecker(
-                            this.gameLocalState.getPrimaryBackupPair(),
-                            this.gameLocalState.getLocalStub(),
-                            () -> this.backupHandlePrimaryServerUnavailability()
-                    ),
-                    500, 500, TimeUnit.MILLISECONDS
-            );
-            System.out.println("!!!! " + this.getGameLocalState().getName() + " become Backup Now");
-            return true;
-        }
-        return false;
-    }
-
-    public void setupStandard(GameGlobalState updatedState){
-        PlayerHelper.setupSelfAsStandard(this, updatedState);
-        /**
-         *  Setup periodic ping as a standard player
-         */
-        stopSchedulerAndTask();
-        this.scheduler = Executors.newScheduledThreadPool(0);
-        this.backgroundScheduledTask = this.scheduler.scheduleWithFixedDelay(
-                new StandardLiveChecker(
-                        this.gameLocalState.getPrimaryBackupPair(),
-                        this.gameLocalState.getLocalStub(),
-                        () -> this.standardPlayerHandlePrimaryServerUnavailability(),
-                        () -> this.standardPlayerHandleBackupServerUnavailability()
-                ),
-                500, 500, TimeUnit.MILLISECONDS
-        );
-    }
-
-    private void stopSchedulerAndTask(){
-        if(this.backgroundScheduledTask != null) {
-            this.backgroundScheduledTask.cancel(false);
-        }
-        if(this.scheduler != null) {
-            this.scheduler.shutdown();
         }
     }
 
@@ -337,7 +261,7 @@ public class Game implements GameInterface {
      * @return updated global game state
      */
     public Object primaryExecuteJoin(String playerName, GameInterface stub){
-        if(this.gameGlobalState.getPlayerStubsMap().size() == 1){
+        if(this.gameGlobalState.getPlayerStubsMap().size() == 1 || this.gameLocalState.getBackupStub() == null){
             this.gameGlobalState.addPlayer(playerName, PlayerType.Backup, stub);
             /**
              * Setup the stub to be backup server
@@ -509,6 +433,93 @@ public class Game implements GameInterface {
     }
 
     /** End of Unavailability handlers **/
+
+    /**
+     * Helper methods
+     */
+    private boolean waitForBackupPromoteAndJoin(boolean isBackupAvailable, String playerName){
+        if(!isBackupAvailable) return false;
+        this.gameLocalState.setPrimaryStub(this.gameLocalState.getBackupStub());
+        try {
+            TimeUnit.MILLISECONDS.sleep(RETRY_WAITING_TIME);
+            this.getGameLocalState().getPrimaryStub().primaryExecuteJoin(playerName, this.gameLocalState.getLocalStub());
+            return true;
+        } catch (Exception e1){
+            e1.printStackTrace();
+            System.err.println("INITIALIZE: Detect both primary server and backup server fail within 2 seconds");
+            return false;
+        }
+    }
+
+    public boolean setupPrimary(boolean isTheOnlyPlayer){
+        if (PlayerHelper.setupSelfAsPrimary(this, isTheOnlyPlayer)){
+            /**
+             * Setup periodic ping to each player
+             */
+            stopSchedulerAndTask();
+            this.scheduler = Executors.newScheduledThreadPool(0);
+            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
+                    new PrimaryLiveChecker(
+                            this.gameLocalState.getPrimaryBackupPair(),
+                            this.gameGlobalState.getPlayerStubsMap(),
+                            () -> this.primaryHandleBackupServerUnavailability(),
+                            (name) -> this.primaryHandleStandardPlayerUnavailability(name)
+                    ),
+                    500, 500, TimeUnit.MILLISECONDS
+            );
+            System.out.println("!!!! " + this.getGameLocalState().getName() + " become Primary Now");
+            return true;
+        }
+        return false;
+    }
+
+    public boolean setupBackup(GameGlobalState updatedState){
+        if(PlayerHelper.setupSelfAsBackup(this, updatedState)){
+            /**
+             * Setup periodic ping to primary server
+             */
+            stopSchedulerAndTask();
+            this.scheduler = Executors.newScheduledThreadPool(0);
+            this.backgroundScheduledTask = this.scheduler.scheduleAtFixedRate(
+                    new BackupLiveChecker(
+                            this.gameLocalState.getPrimaryBackupPair(),
+                            this.gameLocalState.getLocalStub(),
+                            () -> this.backupHandlePrimaryServerUnavailability()
+                    ),
+                    500, 500, TimeUnit.MILLISECONDS
+            );
+            System.out.println("!!!! " + this.getGameLocalState().getName() + " become Backup Now");
+            return true;
+        }
+        return false;
+    }
+
+    public void setupStandard(GameGlobalState updatedState){
+        PlayerHelper.setupSelfAsStandard(this, updatedState);
+        /**
+         *  Setup periodic ping as a standard player
+         */
+        stopSchedulerAndTask();
+        this.scheduler = Executors.newScheduledThreadPool(0);
+        this.backgroundScheduledTask = this.scheduler.scheduleWithFixedDelay(
+                new StandardLiveChecker(
+                        this.gameLocalState.getPrimaryBackupPair(),
+                        this.gameLocalState.getLocalStub(),
+                        () -> this.standardPlayerHandlePrimaryServerUnavailability(),
+                        () -> this.standardPlayerHandleBackupServerUnavailability()
+                ),
+                500, 500, TimeUnit.MILLISECONDS
+        );
+    }
+
+    private void stopSchedulerAndTask(){
+        if(this.backgroundScheduledTask != null) {
+            this.backgroundScheduledTask.cancel(false);
+        }
+        if(this.scheduler != null) {
+            this.scheduler.shutdown();
+        }
+    }
 
     /***Getters and Setters ***/
     public GameGlobalState getGameGlobalState() {

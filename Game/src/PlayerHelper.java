@@ -81,12 +81,12 @@ public class PlayerHelper {
             try {
                 if (game.getGameLocalState().getPlayerType().equals(PlayerType.Primary)) {
                     game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
-                    System.out.println("=========After call Primary Self Call================");
-                    Map<String, Player> mm = game.getGameGlobalState().getPlayersMap();
-                    for (Map.Entry<String, Player> entry : mm.entrySet()){
-                        System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
-                    }
-                    System.out.println("=======================================================");
+//                    System.out.println("=========After call Primary Self Call================");
+//                    Map<String, Player> mm = game.getGameGlobalState().getPlayersMap();
+//                    for (Map.Entry<String, Player> entry : mm.entrySet()){
+//                        System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
+//                    }
+//                    System.out.println("=======================================================");
                 } else {
                     GameGlobalState updatedState = (GameGlobalState) game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
                     game.getGameGlobalState().resetAllStates(
@@ -94,35 +94,46 @@ public class PlayerHelper {
                             updatedState.getPlayerStubsMap(),
                             updatedState.getTreasuresLocation()
                     );
-
-                    System.out.println("=========After call Primary Remote Call================");
-                    Map<String, Player> mm = game.getGameGlobalState().getPlayersMap();
-                    for (Map.Entry<String, Player> entry : mm.entrySet()){
-                        System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
-                    }
-                    System.out.println("=======================================================");
+//                    System.out.println("=========After call Primary Remote Call================");
+//                    Map<String, Player> mm = game.getGameGlobalState().getPlayersMap();
+//                    for (Map.Entry<String, Player> entry : mm.entrySet()){
+//                        System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
+//                    }
+//                    System.out.println("=======================================================");
                 }
             } catch (RemoteException e) {
                 /**
                  * Primary server is offline
                  */
-                System.out.printf("Primary server is offline when issuing request by %s\n", game.getGameLocalState().getName());
-                if(game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
+
+                /**
+                 * Possibly that the player was backup
+                 * but become primary when issuing request.
+                 */
+                if(game.getGameLocalState().getPlayerType().equals(PlayerType.Primary)){
                     game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
                 }else{
-                    try {
-                        System.out.println("Wait for 1 second for backup server promote");
-                        TimeUnit.MILLISECONDS.sleep(Game.RETRY_WAITING_TIME);
-                        if(!game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
-                            System.out.println("Current player is not backup");
-                            List<GameInterface> serverList = game.getGameLocalState().getBackupStub().getPrimaryAndBackupStubs();
-                            game.getGameLocalState().setPrimaryStub(serverList.get(0));
-                            game.getGameLocalState().setBackupStub(serverList.get(1));
+                    System.out.printf("Primary server %s is offline when issuing request by %s\n", game.getGameGlobalState().getNameOfSpecialType(PlayerType.Primary), game.getGameLocalState().getName());
+                    if(game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
+                        game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
+                    }else{
+                        try {
+                            System.out.println("Wait for 1 second for backup server promote");
+                            TimeUnit.MILLISECONDS.sleep(Game.RETRY_WAITING_TIME);
+                            if(!game.getGameLocalState().getPlayerType().equals(PlayerType.Backup)){
+                                System.out.println("Current player is not backup");
+                                List<GameInterface> serverList = game.getGameLocalState().getBackupStub().getPrimaryAndBackupStubs();
+                                game.getGameLocalState().setPrimaryStub(serverList.get(0));
+                                game.getGameLocalState().setBackupStub(serverList.get(1));
+                            }
+                            System.out.println("ISSUE REQUEST: Successfully get latest primary and backup");
+                            game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                            System.err.printf("ISSUE REQUEST: Detect both primary server %s and backup server %s fail within 2 seconds\n",
+                                    game.getGameGlobalState().getNameOfSpecialType(PlayerType.Primary),
+                                    game.getGameGlobalState().getNameOfSpecialType(PlayerType.Backup));
                         }
-                        game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
-                    } catch (Exception e1) {
-                        e1.printStackTrace();
-                        System.err.println("ISSUE REQUEST: Detect both primary server and backup server fail within 2 seconds");
                     }
                 }
             }
