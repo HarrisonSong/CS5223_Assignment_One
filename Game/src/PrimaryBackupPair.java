@@ -12,13 +12,7 @@ public class PrimaryBackupPair extends Pair<GameInterface, GameInterface> {
         this.backupStubLock = new ReentrantReadWriteLock();
     }
 
-    public PrimaryBackupPair(GameInterface primaryStub, GameInterface backupStub) {
-        super(primaryStub, backupStub);
-        this.primaryStubLock = new ReentrantReadWriteLock();
-        this.backupStubLock = new ReentrantReadWriteLock();
-    }
-
-    public GameInterface getPirmaryStub() {
+    public GameInterface getPrimaryStub() {
         primaryStubLock.readLock().lock();
         try {
             return getA();
@@ -52,5 +46,14 @@ public class PrimaryBackupPair extends Pair<GameInterface, GameInterface> {
         } finally {
             backupStubLock.writeLock().unlock();
         }
+    }
+
+    public void setBackupStubLockFree(GameInterface stub) {
+        setB(stub);
+    }
+
+
+    public ReadWriteLock getBackupStubLock(){
+        return this.backupStubLock;
     }
 }

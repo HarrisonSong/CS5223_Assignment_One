@@ -260,8 +260,8 @@ public class Game implements GameInterface {
      * @param stub
      * @return updated global game state
      */
-    public Object primaryExecuteJoin(String playerName, GameInterface stub){
-        if(this.gameGlobalState.getPlayerStubsMap().size() == 1 || this.gameLocalState.getBackupStub() == null){
+    public synchronized Object primaryExecuteJoin(String playerName, GameInterface stub){
+        if(this.gameGlobalState.getPlayerStubsMap().size() == 1){
             this.gameGlobalState.addPlayer(playerName, PlayerType.Backup, stub);
             /**
              * Setup the stub to be backup server
@@ -374,6 +374,7 @@ public class Game implements GameInterface {
         this.setupPrimary((this.gameGlobalState.getPlayerStubsMap().size() == 1));
         PrimaryServerHelper.assignBackupServer(this);
         PrimaryServerHelper.updateTrackerStubMap(this);
+        System.out.println("Backup handle Primary unavailability complete");
     }
 
     public void standardPlayerHandlePrimaryServerUnavailability(){

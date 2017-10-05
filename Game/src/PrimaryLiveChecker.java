@@ -25,20 +25,29 @@ public class PrimaryLiveChecker implements Runnable {
         Iterator<Map.Entry<String, GameInterface>> iterator = this.stubsMap.entrySet().iterator();
         boolean proceed = true;
         try {
+            if(this.primaryBackupPair.getBackupStub() != null){
+                if (!new PingMaster(this.primaryBackupPair.getBackupStub()).isReachable()) {
+                    System.err.println("PRIMARY PING FAILURE: backup Name");
+                    this.primaryToBackupHandler.handle();
+                    proceed = false;
+                }
+            }
             while (iterator.hasNext() && proceed) {
                 Map.Entry<String, GameInterface> nextStub = iterator.next();
-                if (!nextStub.getValue().equals(this.primaryBackupPair.getPirmaryStub())) {
+                if (!nextStub.getValue().equals(this.primaryBackupPair.getPrimaryStub())) {
                     if (!new PingMaster(nextStub.getValue()).isReachable()) {
-                        System.err.printf("PRIMARY PING FAILURE: standard Name - %s\n", nextStub.getKey());
                         if (nextStub.getValue().equals(this.primaryBackupPair.getBackupStub())) {
+                            System.err.printf("PRIMARY PING FAILURE: backup Name - %s\n", nextStub.getKey());
                             this.primaryToBackupHandler.handle();
                         } else {
+                            System.err.printf("PRIMARY PING FAILURE: standard Name - %s\n", nextStub.getKey());
                             this.primaryToStandardHandler.handleWithPlayerName(nextStub.getKey());
                         }
                         proceed = false;
                     }
                 }
             }
+
         } catch (Throwable t){
         }
     }

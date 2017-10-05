@@ -19,13 +19,14 @@ public class StandardLiveChecker implements Runnable {
     @Override
     public void run() {
         try {
-            if(!new PingMaster(this.primaryBackupPair.getPirmaryStub()).isReachable()){
-                System.out.println("STANDARD PING FAILURE: primary");
-                this.standardToPrimaryHandler.handle();
-            }else if(!localStub.equals(this.primaryBackupPair.getBackupStub()) &&
-                    !new PingMaster(this.primaryBackupPair.getBackupStub()).isReachable()){
-                System.out.println("STANDARD PING FAILURE: backup");
-                this.standardToBackupHandler.handle();
+            if(!localStub.equals(this.primaryBackupPair.getBackupStub())){
+                if(!new PingMaster(this.primaryBackupPair.getPrimaryStub()).isReachable()){
+                    System.out.println("STANDARD PING FAILURE: primary");
+                    this.standardToPrimaryHandler.handle();
+                }else if(!new PingMaster(this.primaryBackupPair.getBackupStub()).isReachable()){
+                    System.out.println("STANDARD PING FAILURE: backup");
+                    this.standardToBackupHandler.handle();
+                }
             }
         } catch (Throwable t){
         }

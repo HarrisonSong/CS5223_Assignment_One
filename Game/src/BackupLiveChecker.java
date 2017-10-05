@@ -12,8 +12,8 @@ public class BackupLiveChecker implements Runnable {
 
     @Override
     public void run() {
-        if(!localStub.equals(this.primaryBackupPair.getPirmaryStub())){
-            PingMaster pingMaster = new PingMaster(this.primaryBackupPair.getPirmaryStub());
+        if(!localStub.equals(this.primaryBackupPair.getPrimaryStub())){
+            PingMaster pingMaster = new PingMaster(this.primaryBackupPair.getPrimaryStub());
             try {
                 if(!pingMaster.isReachable()){
                     try {
