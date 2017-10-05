@@ -48,8 +48,8 @@ public class GameGlobalState implements Serializable {
         this.treasuresLocationLock.writeLock().lock();
         try{
             Player targetPlayer = this.playersMap.get(playerName);
-            MazePair currentLocation = targetPlayer.getCurrentPosition();
             if(targetPlayer == null) return false;
+            MazePair currentLocation = targetPlayer.getCurrentPosition();
             switch (command){
                 case West:
                     currentLocation.setColumn(currentLocation.getColumn() - 1);
