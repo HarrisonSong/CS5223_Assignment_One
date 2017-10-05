@@ -70,19 +70,19 @@ public class StressTest {
         }
 
         Vector<StressTestPlayer> allPlayers = new Vector<StressTestPlayer>();
-        Random random = new Random(20171005);
+        Random random = new Random(87654);
         Scanner scan = new Scanner(System.in);
         int step = 0;
 
         while (step < 200) {
             step++;
             System.out.println("Current step is " + step);
-//            if ((step == 5) || (step == 30) || (step == 40) || (step == 60)
-//                    || (step == 200)) {
-//                System.out.println("######### Checkpoint at step " + step
-//                        + " #########");
-//                doSlowMoves(allPlayers, random, scan);
-//            }
+            if ((step == 5) || (step == 30) || (step == 40) || (step == 60)
+                    || (step == 200)) {
+                System.out.println("######### Checkpoint at step " + step
+                        + " #########");
+                doSlowMoves(allPlayers, random, scan);
+            }
 
             if (step <= 4) {
                 createPlayer(allPlayers);

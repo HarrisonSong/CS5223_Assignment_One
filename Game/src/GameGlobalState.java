@@ -13,6 +13,7 @@ public class GameGlobalState implements Serializable {
     private Map<String, Player> playersMap;
     private Map<String, GameInterface> playerStubsMap;
     private List<MazePair> treasuresLocation;
+    private List<String> removedPlayers;
 
     private ReadWriteLock playersMapLock;
     private ReadWriteLock playerStubsMapLock;
@@ -24,6 +25,7 @@ public class GameGlobalState implements Serializable {
         this.mazeSize = mazeSize;
         this.treasuresSize = treasuresSize;
         this.playersMap = new HashMap<>();
+        this.removedPlayers = new ArrayList<>();
         this.playerStubsMap = new HashMap<>();
         this.treasuresLocation = new ArrayList<>(treasuresSize);
         for(int i = 0; i < treasuresSize; i++) {
@@ -106,21 +108,25 @@ public class GameGlobalState implements Serializable {
         this.playersMapLock.writeLock().lock();
         this.playerStubsMapLock.writeLock().lock();
         try {
-            if(this.playersMap.containsKey(playerName)) return false;
-            while(true) {
-                MazePair newLocation = new MazePair(this.mazeSize);
-                if (!isLocationAccessible(newLocation) || hasTreasureLocatedAt(newLocation)) continue;
-                Player newPlayer = new Player(playerName, newLocation, 0, type);
-                newPlayer.showWhereIAm();
-                this.playersMap.put(playerName, newPlayer);
-                this.playerStubsMap.put(playerName, stub);
-
-                changeSupport.firePropertyChange("PlayersMap", 1, 2);
-                return true;
-            }
+            return addPlayerLockFree(playerName, type, stub);
         } finally {
             this.playerStubsMapLock.writeLock().unlock();
             this.playersMapLock.writeLock().unlock();
+        }
+    }
+
+    public boolean addPlayerLockFree(String playerName, PlayerType type, GameInterface stub){
+        if(this.playersMap.containsKey(playerName)) return false;
+        while(true) {
+            MazePair newLocation = new MazePair(this.mazeSize);
+            if (!isLocationAccessible(newLocation) || hasTreasureLocatedAt(newLocation)) continue;
+            Player newPlayer = new Player(playerName, newLocation, 0, type);
+            newPlayer.showWhereIAm();
+            this.playersMap.put(playerName, newPlayer);
+            this.playerStubsMap.put(playerName, stub);
+
+            changeSupport.firePropertyChange("PlayersMap", 1, 2);
+            return true;
         }
     }
 
@@ -128,17 +134,22 @@ public class GameGlobalState implements Serializable {
         this.playersMapLock.writeLock().lock();
         this.playerStubsMapLock.writeLock().lock();
         try {
-            if(!this.playersMap.containsKey(playerName)) return false;
-
-            this.playersMap.remove(playerName);
-            this.playerStubsMap.remove(playerName);
-
-            changeSupport.firePropertyChange("PlayersMap", 1, 2);
-            return true;
+            return removePlayerByNameLockFree(playerName);
         } finally {
             this.playerStubsMapLock.writeLock().unlock();
             this.playersMapLock.writeLock().unlock();
         }
+    }
+
+    public boolean removePlayerByNameLockFree(String playerName){
+        if(!this.playersMap.containsKey(playerName)) return false;
+
+        this.playersMap.remove(playerName);
+        this.playerStubsMap.remove(playerName);
+        this.removedPlayers.add(playerName);
+
+        changeSupport.firePropertyChange("PlayersMap", 1, 2);
+        return true;
     }
 
     /*** PlayerMap methods ***/
@@ -165,10 +176,14 @@ public class GameGlobalState implements Serializable {
     public Map<String, Player> getPlayersMap() {
         this.playersMapLock.readLock().lock();
         try {
-            return playersMap;
+            return getPlayersMapLockFree();
         } finally {
             this.playersMapLock.readLock().unlock();
         }
+    }
+
+    public Map<String, Player> getPlayersMapLockFree() {
+        return playersMap;
     }
 
     public Map<String, Player> getPlayersMapCopy() {
@@ -180,21 +195,13 @@ public class GameGlobalState implements Serializable {
         }
     }
 
-    public String getNameOfSpecialType(PlayerType type) {
-        if(type.equals(PlayerType.Standard)){
-            return null;
-        }
+    public List<String> getRemovedPlayers() {
         this.playersMapLock.readLock().lock();
+        this.playerStubsMapLock.readLock().lock();
         try {
-            Iterator<Map.Entry<String, Player>> iterator = playersMap.entrySet().iterator();
-            while(iterator.hasNext()){
-                Map.Entry<String, Player> entry = iterator.next();
-                if(entry.getValue().getType().equals(type)){
-                    return entry.getKey();
-                }
-            }
-            return null;
+            return this.removedPlayers;
         } finally {
+            this.playerStubsMapLock.readLock().unlock();
             this.playersMapLock.readLock().unlock();
         }
     }
@@ -215,10 +222,14 @@ public class GameGlobalState implements Serializable {
     public Map<String, GameInterface> getPlayerStubsMap() {
         this.playerStubsMapLock.readLock().lock();
         try {
-            return this.playerStubsMap;
+            return getPlayerStubsMapLockFree();
         } finally {
             this.playerStubsMapLock.readLock().unlock();
         }
+    }
+
+    public Map<String, GameInterface> getPlayerStubsMapLockFree() {
+        return this.playerStubsMap;
     }
 
     public void setPlayerStubsMap(Map<String, GameInterface> playerStubsMap) {
@@ -296,6 +307,14 @@ public class GameGlobalState implements Serializable {
 
     public void addPropertyChangeListener(PropertyChangeListener l) {
         changeSupport.addPropertyChangeListener(l);
+    }
+
+    public ReadWriteLock getPlayersMapLock() {
+        return playersMapLock;
+    }
+
+    public ReadWriteLock getPlayerStubsMapLock() {
+        return playerStubsMapLock;
     }
 }
 

@@ -67,6 +67,9 @@ public class GameLocalState {
     public GameInterface getPrimaryStub() {
         return this.primaryBackupPair.getPrimaryStub();
     }
+    public GameInterface getPrimaryStubLockFree() {
+        return this.primaryBackupPair.getPrimaryStubLockFree();
+    }
 
     public void setPrimaryStub(GameInterface stub){
         this.primaryBackupPair.setPrimaryStub(stub);
@@ -74,6 +77,9 @@ public class GameLocalState {
 
     public GameInterface getBackupStub() {
         return this.primaryBackupPair.getBackupStub();
+    }
+    public GameInterface getBackupStubLockFree() {
+        return this.primaryBackupPair.getBackupStubLockFree();
     }
 
     public void setBackupStub(GameInterface stub){

@@ -117,7 +117,7 @@ public class Game implements GameInterface {
             System.exit(0);
         }
 
-        Map playerStubsMapFromTracker = null;
+        Map<String, GameInterface> playerStubsMapFromTracker = null;
         boolean isRegistered = false;
         try {
             MazeSize = game.gameLocalState.getTrackerStub().getN();
@@ -135,6 +135,9 @@ public class Game implements GameInterface {
             /**
              * Initialize and collect necessary parameters from tracker
              */
+            for (Map.Entry<String, GameInterface> entry : playerStubsMapFromTracker.entrySet()){
+                System.out.printf("name: " + entry.getKey() + "\n");
+            }
             game.gameGlobalState.setPlayerStubsMap(playerStubsMapFromTracker);
 
             if (playerStubsMapFromTracker.size() == 1) {
@@ -260,40 +263,51 @@ public class Game implements GameInterface {
      * @param stub
      * @return updated global game state
      */
-    public synchronized Object primaryExecuteJoin(String playerName, GameInterface stub){
-        if(this.gameGlobalState.getPlayerStubsMap().size() == 1){
-            this.gameGlobalState.addPlayer(playerName, PlayerType.Backup, stub);
-            /**
-             * Setup the stub to be backup server
-             */
-            try {
-                stub.playerPromoteAsBackup(this.gameGlobalState, this.gameLocalState.getPrimaryStub());
-                this.gameLocalState.setBackupStub(stub);
-            } catch (RemoteException e) {
-                System.out.println("EXECUTE JOIN: Primary Server failed to contact new assigned Backup Server");
-                this.gameGlobalState.removePlayerByName(playerName);
-            }
-        }else{
-            this.gameGlobalState.addPlayer(playerName, PlayerType.Standard, stub);
-            try {
+    public Object primaryExecuteJoin(String playerName, GameInterface stub){
+        this.gameGlobalState.getPlayersMapLock().writeLock().lock();
+        this.gameGlobalState.getPlayerStubsMapLock().writeLock().lock();
+        this.gameLocalState.getPrimaryBackupPair().getBackupStubLock().writeLock().lock();
+        this.gameLocalState.getPrimaryBackupPair().getPrimaryStubLock().readLock().lock();
+        try {
+            if(this.gameGlobalState.getPlayerStubsMapLockFree().size() == 1){
+                this.gameGlobalState.addPlayerLockFree(playerName, PlayerType.Backup, stub);
                 /**
-                 * Setup the stub to be standard player
+                 * Setup the stub to be backup server
                  */
-                stub.playerSetupAsStandard(this.gameGlobalState, this.gameLocalState.getPrimaryStub(), this.gameLocalState.getBackupStub());
+                try {
+                    stub.playerPromoteAsBackup(this.gameGlobalState, this.gameLocalState.getPrimaryStubLockFree());
+                    this.gameLocalState.setBackupStubLockFree(stub);
+                } catch (RemoteException e) {
+                    System.out.println("EXECUTE JOIN: Primary Server failed to contact new assigned Backup Server");
+                    this.gameGlobalState.removePlayerByNameLockFree(playerName);
+                }
+            }else{
+                this.gameGlobalState.addPlayerLockFree(playerName, PlayerType.Standard, stub);
                 try {
                     /**
-                     * Remote call backup server to update its global state
+                     * Setup the stub to be standard player
                      */
-                    if(this.gameLocalState.getBackupStub() != null){
-                        this.gameLocalState.getBackupStub().backupUpdateGameGlobalState(this.gameGlobalState);
+                    stub.playerSetupAsStandard(this.gameGlobalState, this.gameLocalState.getPrimaryStub(), this.gameLocalState.getBackupStub());
+                    try {
+                        /**
+                         * Remote call backup server to update its global state
+                         */
+                        if(this.gameLocalState.getBackupStubLockFree() != null){
+                            this.gameLocalState.getBackupStubLockFree().backupUpdateGameGlobalState(this.gameGlobalState);
+                        }
+                    } catch (RemoteException e) {
+                        System.out.println("EXECUTE JOIN: Primary Server failed to update Backup Server");
                     }
                 } catch (RemoteException e) {
-                    System.out.println("EXECUTE JOIN: Primary Server failed to update Backup Server");
+                    System.out.println("EXECUTE JOIN: Primary Server failed to contact new Standard Player");
+                    this.gameGlobalState.removePlayerByNameLockFree(playerName);
                 }
-            } catch (RemoteException e) {
-                System.out.println("EXECUTE JOIN: Primary Server failed to contact new Standard Player");
-                this.gameGlobalState.removePlayerByName(playerName);
             }
+        } finally {
+            this.gameLocalState.getPrimaryBackupPair().getPrimaryStubLock().readLock().unlock();
+            this.gameLocalState.getPrimaryBackupPair().getBackupStubLock().writeLock().unlock();
+            this.gameGlobalState.getPlayerStubsMapLock().writeLock().unlock();
+            this.gameGlobalState.getPlayersMapLock().writeLock().unlock();
         }
         return this.gameGlobalState;
     }

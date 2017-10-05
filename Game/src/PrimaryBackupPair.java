@@ -15,10 +15,14 @@ public class PrimaryBackupPair extends Pair<GameInterface, GameInterface> {
     public GameInterface getPrimaryStub() {
         primaryStubLock.readLock().lock();
         try {
-            return getA();
+            return getPrimaryStubLockFree();
         } finally {
             primaryStubLock.readLock().unlock();
         }
+    }
+
+    public GameInterface getPrimaryStubLockFree() {
+        return getA();
     }
 
     public void setPrimaryStub(GameInterface stub) {
@@ -33,16 +37,20 @@ public class PrimaryBackupPair extends Pair<GameInterface, GameInterface> {
     public GameInterface getBackupStub() {
         backupStubLock.readLock().lock();
         try {
-            return getB();
+            return getBackupStubLockFree();
         } finally {
             backupStubLock.readLock().unlock();
         }
     }
 
+    public GameInterface getBackupStubLockFree() {
+        return getB();
+    }
+
     public void setBackupStub(GameInterface stub) {
         backupStubLock.writeLock().lock();
         try {
-            setB(stub);
+            setBackupStubLockFree(stub);
         } finally {
             backupStubLock.writeLock().unlock();
         }
@@ -53,6 +61,9 @@ public class PrimaryBackupPair extends Pair<GameInterface, GameInterface> {
     }
 
 
+    public ReadWriteLock getPrimaryStubLock(){
+        return this.primaryStubLock;
+    }
     public ReadWriteLock getBackupStubLock(){
         return this.backupStubLock;
     }

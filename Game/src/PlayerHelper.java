@@ -21,6 +21,15 @@ public class PlayerHelper {
              * Update game global state
              */
             game.getGameGlobalState().updatePlayerType(game.getGameLocalState().getName(), PlayerType.Primary);
+            try {
+                game.getGameLocalState().getTrackerStub().resetTrackerStubs(
+                        game.getGameGlobalState().getRemovedPlayers(),
+                        game.getGameLocalState().getName()
+                );
+            } catch (RemoteException e) {
+                System.out.println("Failed to contact Tracker METHOD: resetTrackerStubs");
+                System.exit(0);
+            }
             return true;
         }
         return false;

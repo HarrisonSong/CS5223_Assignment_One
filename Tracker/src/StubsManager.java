@@ -1,4 +1,6 @@
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -21,6 +23,21 @@ public class StubsManager {
             readWritelock.writeLock().unlock();
         }
         return isSuccessfullyAdded;
+    }
+
+    public boolean removePlayers(List<String> players){
+        boolean isSuccessfullyUpdated;
+        readWritelock.writeLock().lock();
+        try {
+            Iterator<String> iterator = players.iterator();
+            while(iterator.hasNext()){
+                this.stubsMap.remove(iterator.next());
+            }
+            isSuccessfullyUpdated = true;
+        } finally {
+            readWritelock.writeLock().unlock();
+        }
+        return isSuccessfullyUpdated;
     }
 
     public boolean updateStubsMap(Map<String, GameInterface> newMap){

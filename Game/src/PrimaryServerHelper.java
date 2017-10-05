@@ -4,7 +4,10 @@ import java.util.Iterator;
 public class PrimaryServerHelper {
     public static void updateTrackerStubMap(Game game){
         try {
-            game.getGameLocalState().getTrackerStub().resetTrackerStubs(game.getGameGlobalState().getPlayerStubsMap());
+            game.getGameLocalState().getTrackerStub().resetTrackerStubs(
+                    game.getGameGlobalState().getRemovedPlayers(),
+                    game.getGameLocalState().getName()
+            );
         } catch (RemoteException e) {
             e.printStackTrace();
             System.err.println("Failed to contact Tracker METHOD: resetTrackerStubs");

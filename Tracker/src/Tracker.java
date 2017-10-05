@@ -73,15 +73,23 @@ public class Tracker implements TrackerInterface {
     public boolean registerNewPlayer(String playName, GameInterface stub){
         if(!this.stubsManager.isPlayerNameUsed(playName) && playName.length() == NAME_LENGTH){
             System.out.println("register success.");
-            return this.stubsManager.addNewStub(playName, stub);
+            boolean result = this.stubsManager.addNewStub(playName, stub);
+            for (Map.Entry<String, GameInterface> entry : this.stubsManager.getStubsMap().entrySet()){
+                System.out.printf("name: " + entry.getKey() + "\n");
+            }
+            return result;
         }
         System.out.println("register fail.");
         return false;
     }
 
-    public boolean resetTrackerStubs(Map<String, GameInterface> updatedStubs){
-        System.out.println("Successfully update tracker stub map");
-        return this.stubsManager.updateStubsMap(updatedStubs);
+    public boolean resetTrackerStubs(List<String> removedPlayers, String name){
+        System.out.printf("Successfully update tracker stub map by %s\n", name);
+        boolean result = this.stubsManager.removePlayers(removedPlayers);
+//        for (Map.Entry<String, GameInterface> entry : this.stubsManager.getStubsMap().entrySet()){
+//            System.out.printf("name: " + entry.getKey() + "\n");
+//        }
+        return result;
     }
 
     public Map serveStubs() {
