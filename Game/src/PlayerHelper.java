@@ -90,12 +90,6 @@ public class PlayerHelper {
             try {
                 if (game.getGameLocalState().getPlayerType().equals(PlayerType.Primary)) {
                     game.primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
-//                    System.out.println("=========After call Primary Self Call================");
-//                    Map<String, Player> mm = game.getGameGlobalState().getPlayersMap();
-//                    for (Map.Entry<String, Player> entry : mm.entrySet()){
-//                        System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
-//                    }
-//                    System.out.println("=======================================================");
                 } else {
                     GameGlobalState updatedState = (GameGlobalState) game.getGameLocalState().getPrimaryStub().primaryExecuteRemoteRequest(game.getGameLocalState().getName(), request);
                     game.getGameGlobalState().resetAllStates(
@@ -103,12 +97,6 @@ public class PlayerHelper {
                             updatedState.getPlayerStubsMap(),
                             updatedState.getTreasuresLocation()
                     );
-//                    System.out.println("=========After call Primary Remote Call================");
-//                    Map<String, Player> mm = game.getGameGlobalState().getPlayersMap();
-//                    for (Map.Entry<String, Player> entry : mm.entrySet()){
-//                        System.out.printf(entry.getKey()+" [" + entry.getValue().getCurrentPosition().getRow() + ", "+entry.getValue().getCurrentPosition().getColumn()+"]\n");
-//                    }
-//                    System.out.println("=======================================================");
                 }
             } catch (RemoteException e) {
                 /**
